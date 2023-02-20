@@ -1,8 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx
-from dataclasses.vrp_node import VRPNode
-from dataclasses.vrp import VRP
+from models.vrp_node import VRPNode
+from models.vrp import VRP
 from dataclasses import fields
 
 

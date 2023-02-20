@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from dataclasses.vrp_node import VRPNode
+from models.vrp_node import VRPNode
 
 
 @dataclass

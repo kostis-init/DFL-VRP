@@ -1,5 +1,5 @@
 import gurobipy as gp
-from dataclasses.vrp import VRP
+from models.vrp import VRP
 
 
 class GurobiSolver:
