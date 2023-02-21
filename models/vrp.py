@@ -1,13 +1,13 @@
 from dataclasses import dataclass
+
 from models.vrp_node import VRPNode
+from models.vrp_vehicle import VRPVehicle
 
 
 @dataclass
 class VRP:
-    """Class for VRP instance"""
     name: str  # name of the problem instance
-    num_vehicles: int  # number of vehicles
-    capacity: int  # vehicle capacity
+    vehicles: [VRPVehicle]  # vehicles
     depot: VRPNode  # the depot node
     customers: [VRPNode]  # list of customer nodes
 
@@ -17,8 +17,14 @@ class VRP:
     def get_all_nodes(self) -> [VRPNode]:
         return [self.depot] + self.customers
 
+    def get_all_nodes_per_vehicle(self) -> [VRPNode, VRPVehicle]:
+        return [(i, k) for i in self.get_all_nodes() for k in self.vehicles]
+
     def get_arcs(self) -> [tuple[VRPNode, VRPNode]]:
         return [(i, j) for i in self.get_all_nodes() for j in self.get_all_nodes()]
+
+    def get_arcs_per_vehicle(self) -> [tuple[VRPNode, VRPNode, VRPVehicle]]:
+        return [(i, j, k) for i in self.get_all_nodes() for j in self.get_all_nodes() for k in self.vehicles]
 
     def __str__(self):
         return f"VRP instance: {self.name}"

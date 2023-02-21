@@ -5,6 +5,8 @@ from models.vrp_node import VRPNode
 from models.vrp import VRP
 from dataclasses import fields
 
+from models.vrp_vehicle import VRPVehicle
+
 
 def parse_datafile(file_path: str) -> VRP:
     """
@@ -15,7 +17,7 @@ def parse_datafile(file_path: str) -> VRP:
     columns = {field.name: field.type for field in fields(VRPNode)}
     df = pd.read_csv(file_path, sep='\s+', skiprows=1, names=columns)
     nodes = [VRPNode(**row) for row in df.to_dict('records')]
-    return VRP(file_path, 1, 200, nodes[0], nodes[1:])
+    return VRP(file_path, [VRPVehicle(1, 200)], nodes[0], nodes[1:])
 
 
 def draw_solution(active_arcs, vrp) -> None:

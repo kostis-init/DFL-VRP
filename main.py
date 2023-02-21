@@ -42,11 +42,11 @@ def generate_costs(features):
 
 
 # # Create cost matrix (Euclidean distance for now)
-# c = {(i, j): np.hypot(i.x - j.x, i.y - j.y) for i in vrp.get_all_nodes() for j in vrp.get_all_nodes()}
+c = {(i, j): np.hypot(i.x - j.x, i.y - j.y) for i in vrp.get_all_nodes() for j in vrp.get_all_nodes()}
 # Generate costs for each edge
-actual_costs = {(i, j): generate_costs(features)[k] for k, (i, j) in enumerate(vrp.get_arcs())}
+# actual_costs = {(i, j): generate_costs(features)[k] for k, (i, j) in enumerate(vrp.get_arcs())}
+actual_costs = c
 
-
-solver = GurobiSolver(vrp, actual_costs, mip_gap=0.2, time_limit=10)
+solver = GurobiSolver(vrp, actual_costs, mip_gap=0.1, time_limit=20, verbose=False)
 solver.optimize()
 draw_solution(solver.get_active_arcs(), vrp)
