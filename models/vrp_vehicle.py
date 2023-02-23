@@ -17,15 +17,3 @@ class VRPVehicle:
 
     def __hash__(self):
         return hash(self.id)
-
-    def __lt__(self, other):
-        return self.id < other.id
-
-    def __le__(self, other):
-        return self.id <= other.id
-
-    def __gt__(self, other):
-        return self.id > other.id
-
-    def __ge__(self, other):
-        return self.id >= other.id

@@ -11,32 +11,15 @@ class VRP:
     depot: VRPNode  # the depot node
     customers: [VRPNode]  # list of customer nodes
 
-    def get_demands(self) -> dict[VRPNode, float]:
-        return {node: node.demand for node in self.get_all_nodes()}
-
-    def get_service_times(self) -> dict[VRPNode, float]:
-        return {node: node.service_time for node in self.get_all_nodes()}
-
-    def get_ready_times(self) -> dict[VRPNode, float]:
-        return {node: node.ready_time for node in self.get_all_nodes()}
-
-    def get_due_dates(self) -> dict[VRPNode, float]:
-        return {node: node.due_date for node in self.get_all_nodes()}
-
-    def get_vehicle_capacities(self) -> dict[VRPVehicle, float]:
-        return {vehicle: vehicle.capacity for vehicle in self.vehicles}
-
-    def get_all_nodes(self) -> [VRPNode]:
-        return [self.depot] + self.customers
-
-    def get_all_nodes_per_vehicle(self) -> [VRPNode, VRPVehicle]:
-        return [(i, k) for i in self.get_all_nodes() for k in self.vehicles]
-
-    def get_arcs(self) -> [tuple[VRPNode, VRPNode]]:
-        return [(i, j) for i in self.get_all_nodes() for j in self.get_all_nodes()]
-
-    def get_arcs_per_vehicle(self) -> [tuple[VRPNode, VRPNode, VRPVehicle]]:
-        return [(i, j, k) for i in self.get_all_nodes() for j in self.get_all_nodes() for k in self.vehicles]
+    def __post_init__(self):
+        self.nodes = [self.depot] + self.customers
+        self.arcs = [(i, j) for i in self.nodes for j in self.nodes]
+        self.arcs_per_vehicle = [(i, j, k) for i in self.nodes for j in self.nodes for k in self.vehicles]
+        self.demands = {i: i.demand for i in self.nodes}
+        self.service_times = {i: i.service_time for i in self.nodes}
+        self.ready_times = {i: i.ready_time for i in self.nodes}
+        self.due_dates = {i: i.due_date for i in self.nodes}
+        self.vehicle_capacities = {i: i.capacity for i in self.vehicles}
 
     def __str__(self):
         return f"VRP instance: {self.name}"
@@ -44,32 +27,20 @@ class VRP:
     def __repr__(self):
         return f"VRP instance: {self.name}"
 
-    def __len__(self):
-        return len(self.get_all_nodes())
-
-    def __getitem__(self, index):
-        return self.get_all_nodes()[index]
-
-    def __iter__(self):
-        return iter(self.get_all_nodes())
-
-    def __contains__(self, item: VRPNode):
-        return item in self.get_all_nodes()
-
     def __eq__(self, other):
         return self.name == other.name
 
     def __hash__(self):
         return hash(self.name)
 
-    def __lt__(self, other):
-        return self.name < other.name
+    def __len__(self):
+        return len(self.nodes)
 
-    def __le__(self, other):
-        return self.name <= other.name
+    def __getitem__(self, index):
+        return self.nodes[index]
 
-    def __gt__(self, other):
-        return self.name > other.name
+    def __iter__(self):
+        return iter(self.nodes)
 
-    def __ge__(self, other):
-        return self.name >= other.name
+    def __contains__(self, item: VRPNode):
+        return item in self.nodes

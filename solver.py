@@ -14,13 +14,13 @@ class GurobiSolver:
         # x[i, j] = 1 if arc (i, j) is used on the route
         self.x = self.model.addVars(vrp.get_arcs(), vtype=gp.GRB.BINARY, name='x')
         # u[i] = cumulative demand up to node i on the route (including i)
-        self.u = self.model.addVars(vrp.get_all_nodes(), vtype=gp.GRB.INTEGER, name='u')
+        self.u = self.model.addVars(vrp.__construct_nodes__(), vtype=gp.GRB.INTEGER, name='u')
 
         # Add objective function
         self.model.setObjective(gp.quicksum(self.x[i, j] * costs[i, j] for i, j in vrp.get_arcs()))
 
         # Add constraints
-        nodes = vrp.get_all_nodes()
+        nodes = vrp.__construct_nodes__()
         customers = vrp.customers
         demands = vrp.get_demands()
         capacity = vrp.capacity
@@ -52,23 +52,17 @@ class GurobiSolverMultiVehicle:
         # Add decision variables
 
         # x[i, j, k] = 1 if arc (i, j) is used on the route of vehicle k
-        self.x = self.model.addVars(vrp.get_arcs_per_vehicle(), vtype=gp.GRB.BINARY, name='x')
+        self.x = self.model.addVars(vrp.arcs_per_vehicle, vtype=gp.GRB.BINARY, name='x')
         # s[i] = time at which node i is visited
-        self.s = self.model.addVars(vrp.get_all_nodes(), vtype=gp.GRB.CONTINUOUS, name='s')
+        self.s = self.model.addVars(vrp.nodes, vtype=gp.GRB.CONTINUOUS, name='s')
 
         # Add objective function
-        self.model.setObjective(gp.quicksum(self.x[i, j, k] * costs[i, j] for i, j, k in vrp.get_arcs_per_vehicle()))
+        self.model.setObjective(gp.quicksum(self.x[i, j, k] * costs[i, j] for i, j, k in vrp.arcs_per_vehicle))
 
         # Add constraints
-        nodes = vrp.get_all_nodes()
-        customers = vrp.customers
-        demands = vrp.get_demands()
-        depot = vrp.depot
-        vehicles = vrp.vehicles
-        ready_times = vrp.get_ready_times()
-        service_times = vrp.get_service_times()
-        due_dates = vrp.get_due_dates()
-        capacities = vrp.get_vehicle_capacities()
+        nodes, customers, demands, depot, vehicles, ready_times, service_times, due_dates, capacities = \
+            vrp.nodes, vrp.customers, vrp.demands, vrp.depot, vrp.vehicles, vrp.ready_times, vrp.service_times, \
+            vrp.due_dates, vrp.vehicle_capacities
         maximum_amount_time = max(due_dates[i] + travel_times[i, j] - ready_times[i] for i in nodes for j in nodes)
 
         # No travel from a node to itself
@@ -81,7 +75,7 @@ class GurobiSolverMultiVehicle:
         self.model.addConstrs(gp.quicksum(self.x[i, j, k] for i in nodes for k in vehicles) == 1 for j in customers)
         # Every vehicle leaves the depot. Together with constraint 1, we know that every vehicle arrives again at
         # the depot. If we use == instead of >=, we would know that every vehicle arrives exactly once at the depot.
-        self.model.addConstrs(gp.quicksum(self.x[depot, j, k] for j in customers) >= 1 for k in vehicles)
+        self.model.addConstrs(gp.quicksum(self.x[depot, j, k] for j in customers) == 1 for k in vehicles)
         # Capacity constraint
         self.model.addConstrs(
             gp.quicksum(self.x[i, j, k] * demands[j] for j in customers for i in nodes) <= capacities[k]

@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.markers as markers
 import networkx as nx
 from models.vrp_node import VRPNode
 from models.vrp import VRP
@@ -17,7 +18,8 @@ def parse_datafile(file_path: str) -> VRP:
     columns = {field.name: field.type for field in fields(VRPNode)}
     df = pd.read_csv(file_path, sep='\s+', skiprows=1, names=columns)
     nodes = [VRPNode(**row) for row in df.to_dict('records')]
-    return VRP(file_path, [VRPVehicle(1, 20000.0), VRPVehicle(2, 20000.0)], nodes[0], nodes[1:])
+    vehicles = [VRPVehicle(i, 20000.0) for i in range(1, 4)]
+    return VRP(file_path, vehicles, nodes[0], nodes[1:])
 
 
 def draw_solution(active_arcs: [tuple[VRPNode, VRPNode, VRPVehicle]], vrp: VRP) -> None:
@@ -29,15 +31,15 @@ def draw_solution(active_arcs: [tuple[VRPNode, VRPNode, VRPVehicle]], vrp: VRP) 
     """
 
     graph = nx.DiGraph()
-    graph.add_nodes_from(vrp.get_all_nodes())
+    graph.add_nodes_from(vrp.nodes)
     graph.add_edges_from([arc[:2] for arc in active_arcs])
 
     all_colors = plt.cm.get_cmap('tab20').colors
     nx.draw_networkx(G=graph,
-                     pos={i: (i.x, i.y) for i in vrp.get_all_nodes()},
-                     node_color=['r' if i == vrp.depot else 'b' for i in vrp.get_all_nodes()],
-                     with_labels=False,
-                     node_size=60,
+                     pos={i: (i.x, i.y) for i in vrp.nodes},
+                     node_color=['r' if i == vrp.depot else 'y' for i in vrp.nodes],
+                     with_labels=True,
+                     node_size=180,
                      edge_color=[all_colors[arc[2].id % len(all_colors)] for arc in active_arcs])
     plt.show()
 
