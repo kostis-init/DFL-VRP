@@ -5,8 +5,6 @@ import tensorflow as tf
 from solver import GurobiSolver
 from solver import GurobiSolverMultiVehicle
 
-# todo: consider time
-# todo: consider more than one vehicle
 # todo: consider vehicle capacity/speed/cost
 
 vrp = parse_datafile('data/random/200/small.txt')
@@ -49,7 +47,8 @@ c = {(i, j): np.hypot(i.x - j.x, i.y - j.y) for i in vrp.nodes for j in vrp.node
 actual_costs = c
 
 service_times = vrp.service_times
-travel_times = {(i, j): service_times[i] + np.hypot(i.x - j.x, i.y - j.y)/10.0 for i in vrp.nodes for j in vrp.nodes}
+speed = 10.0
+travel_times = {(i, j): service_times[i] + np.hypot(i.x - j.x, i.y - j.y)/speed for i in vrp.nodes for j in vrp.nodes}
 
 # solver = GurobiSolver(vrp, actual_costs, mip_gap=0.1, time_limit=20, verbose=False)
 solver = GurobiSolverMultiVehicle(vrp, actual_costs, travel_times, mip_gap=0.02, time_limit=20, verbose=True)
