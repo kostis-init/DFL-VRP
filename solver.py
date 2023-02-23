@@ -53,8 +53,8 @@ class GurobiSolverMultiVehicle:
 
         # x[i, j, k] = 1 if arc (i, j) is used on the route of vehicle k
         self.x = self.model.addVars(vrp.arcs_per_vehicle, vtype=gp.GRB.BINARY, name='x')
-        # s[i] = time at which node i is visited
-        self.s = self.model.addVars(vrp.nodes, vtype=gp.GRB.CONTINUOUS, name='s')
+        # s[i] = time at which customer i is visited
+        self.s = self.model.addVars(vrp.customers, vtype=gp.GRB.CONTINUOUS, name='s')
 
         # Add objective function
         self.model.setObjective(gp.quicksum(self.x[i, j, k] * costs[i, j] for i, j, k in vrp.arcs_per_vehicle))
@@ -70,24 +70,21 @@ class GurobiSolverMultiVehicle:
         # Vehicle leaves node that it enters
         self.model.addConstrs(gp.quicksum(self.x[i, j, k] for j in nodes) == gp.quicksum(self.x[j, i, k] for j in nodes)
                               for i in nodes for k in vehicles)
-        # Ensure that every node is entered once. Together with the first constraint, it ensures that every
+        # Ensure that every node is entered once. Together with the previous constraint, it ensures that every
         # node is entered only once, and it is left by the same vehicle.
         self.model.addConstrs(gp.quicksum(self.x[i, j, k] for i in nodes for k in vehicles) == 1 for j in customers)
         # Every vehicle leaves the depot. Together with constraint 1, we know that every vehicle arrives again at
-        # the depot. If we use == instead of >=, we would know that every vehicle arrives exactly once at the depot.
-        self.model.addConstrs(gp.quicksum(self.x[depot, j, k] for j in customers) == 1 for k in vehicles)
-        # Capacity constraint
-        self.model.addConstrs(
-            gp.quicksum(self.x[i, j, k] * demands[j] for j in customers for i in nodes) <= capacities[k]
-            for k in vehicles)
+        # the depot. If we use == instead of >=, we would know that every vehicle leaves depot and arrives exactly once.
+        self.model.addConstrs(gp.quicksum(self.x[depot, j, k] for j in customers)>= 1 for k in vehicles)
+
         # Sub-tour elimination. Using time windows, we can eliminate sub-tours by adding the following constraints:
         # Time window constraints. Keep track of the duration of the routes.
         self.model.addConstrs(self.s[j] >= self.s[i] + travel_times[i, j] - (1 - self.x[i, j, k]) * maximum_amount_time
-                              for i in nodes for j in customers for k in vehicles)
+                              for i in customers for j in customers for k in vehicles)
         # Time window constraints. Ensure that the vehicle arrives at the customer after the ready time.
-        self.model.addConstrs(self.s[i] >= ready_times[i] for i in nodes)
+        self.model.addConstrs(self.s[i] >= ready_times[i] for i in customers)
         # Time window constraints. Ensure that the vehicle arrives at the customer before the due date.
-        self.model.addConstrs(self.s[i] <= due_dates[i] for i in nodes)
+        self.model.addConstrs(self.s[i] <= due_dates[i] for i in customers)
 
     def optimize(self):
         self.model.optimize()

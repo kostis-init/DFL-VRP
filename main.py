@@ -7,7 +7,11 @@ from solver import GurobiSolverMultiVehicle
 
 # todo: consider vehicle capacity/speed/cost
 
-vrp = parse_datafile('data/random/200/small.txt')
+vrp = parse_datafile('data/random/200/no_time.txt')
+# vrp = parse_datafile('data/random/200/r101.txt')
+# vrp = parse_datafile('data/random/200/r201.txt')
+# vrp = parse_datafile('data/random/200/r301.txt')
+
 
 # construct features
 features = []
