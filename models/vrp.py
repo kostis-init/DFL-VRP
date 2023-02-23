@@ -14,6 +14,18 @@ class VRP:
     def get_demands(self) -> dict[VRPNode, float]:
         return {node: node.demand for node in self.get_all_nodes()}
 
+    def get_service_times(self) -> dict[VRPNode, float]:
+        return {node: node.service_time for node in self.get_all_nodes()}
+
+    def get_ready_times(self) -> dict[VRPNode, float]:
+        return {node: node.ready_time for node in self.get_all_nodes()}
+
+    def get_due_dates(self) -> dict[VRPNode, float]:
+        return {node: node.due_date for node in self.get_all_nodes()}
+
+    def get_vehicle_capacities(self) -> dict[VRPVehicle, float]:
+        return {vehicle: vehicle.capacity for vehicle in self.vehicles}
+
     def get_all_nodes(self) -> [VRPNode]:
         return [self.depot] + self.customers
 

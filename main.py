@@ -3,6 +3,7 @@ from util import *
 import random
 import tensorflow as tf
 from solver import GurobiSolver
+from solver import GurobiSolverMultiVehicle
 
 # todo: consider time
 # todo: consider more than one vehicle
@@ -47,6 +48,9 @@ c = {(i, j): np.hypot(i.x - j.x, i.y - j.y) for i in vrp.get_all_nodes() for j i
 # actual_costs = {(i, j): generate_costs(features)[k] for k, (i, j) in enumerate(vrp.get_arcs())}
 actual_costs = c
 
-solver = GurobiSolver(vrp, actual_costs, mip_gap=0.1, time_limit=20, verbose=False)
+travel_times = {(i, j): np.hypot(i.x - j.x, i.y - j.y)/10.0  for i in vrp.get_all_nodes() for j in vrp.get_all_nodes()}
+
+# solver = GurobiSolver(vrp, actual_costs, mip_gap=0.1, time_limit=20, verbose=False)
+solver = GurobiSolverMultiVehicle(vrp, actual_costs, travel_times, mip_gap=0.1, time_limit=20, verbose=True)
 solver.optimize()
 draw_solution(solver.get_active_arcs(), vrp)
