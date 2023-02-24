@@ -1,8 +1,7 @@
 import numpy as np
 from util import *
 import random
-import tensorflow as tf
-from solver import GurobiSolver
+# import tensorflow as tf
 from solver import GurobiSolverMultiVehicle
 
 # todo: consider vehicle capacity/speed/cost
@@ -44,17 +43,12 @@ def generate_costs(features):
     return costs
 
 
-# # Create cost matrix (Euclidean distance for now)
-c = {(i, j): np.hypot(i.x - j.x, i.y - j.y) for i in vrp.nodes for j in vrp.nodes}
-# Generate costs for each edge
+actual_costs = {(i, j): np.hypot(i.x - j.x, i.y - j.y) for i in vrp.nodes for j in vrp.nodes}
 # actual_costs = {(i, j): generate_costs(features)[k] for k, (i, j) in enumerate(vrp.get_arcs())}
-actual_costs = c
-
-service_times = vrp.service_times
 speed = 10.0
-travel_times = {(i, j): service_times[i] + np.hypot(i.x - j.x, i.y - j.y)/speed for i in vrp.nodes for j in vrp.nodes}
+travel_times = {(i, j): vrp.service_times[i] + np.hypot(i.x - j.x, i.y - j.y)/speed for i in vrp.nodes for j in vrp.nodes}
 
-# solver = GurobiSolver(vrp, actual_costs, mip_gap=0.1, time_limit=20, verbose=False)
 solver = GurobiSolverMultiVehicle(vrp, actual_costs, travel_times, mip_gap=0.02, time_limit=20, verbose=True)
+
 solver.optimize()
 draw_solution(solver.get_active_arcs(), vrp)
