@@ -34,10 +34,7 @@ def draw_solution(active_arcs: [tuple[VRPNode, VRPNode, VRPVehicle]], vrp: VRP) 
     graph.add_edges_from([arc[:2] for arc in active_arcs])
     nx.draw_networkx(G=graph,
                      pos={i: (i.x, i.y) for i in vrp.nodes},
-                     node_color=['r' if i == vrp.depot else 'y' for i in vrp.nodes],
-                     with_labels=False,
-                     node_size=1,
+                     node_color=['red' if i == vrp.depot else 'black' for i in vrp.nodes],
+                     with_labels=False, node_size=10,
                      edge_color=[arc[2].id for arc in active_arcs])
     plt.show()
-
-

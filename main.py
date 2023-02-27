@@ -2,9 +2,8 @@ import numpy as np
 from util import *
 import random
 # import tensorflow as tf
-from solver import GurobiSolverMultiVehicle
+from solver import GurobiSolver, ORSolver
 
-# todo: consider vehicle capacity/speed/cost
 
 # vrp = parse_datafile('data/random/200/no_time.txt')
 # vrp = parse_datafile('data/random/200/r101.txt')
@@ -15,7 +14,7 @@ vrp = parse_datafile('data/random/200/c101.txt')
 
 # construct features
 features = []
-for i, j in vrp.arcs:
+for i, j, k in vrp.arcs:
     features.append([
         np.hypot(i.x - j.x, i.y - j.y),  # distance between nodes
         np.hypot(i.x - vrp.depot.x, i.y - vrp.depot.y),  # distance from node i to depot
@@ -44,12 +43,8 @@ def generate_costs(features):
     return costs
 
 
-actual_costs = {(i, j): np.hypot(i.x - j.x, i.y - j.y) for i in vrp.nodes for j in vrp.nodes}
-# actual_costs = {(i, j): generate_costs(features)[k] for k, (i, j) in enumerate(vrp.get_arcs())}
-speed = 10.0
-travel_times = {(i, j): vrp.service_times[i] + np.hypot(i.x - j.x, i.y - j.y)/speed for i in vrp.nodes for j in vrp.nodes}
-
-solver = GurobiSolverMultiVehicle(vrp, actual_costs, travel_times, mip_gap=0, time_limit=20, verbose=True)
+solver = GurobiSolver(vrp, mip_gap=0, time_limit=20, verbose=True)
+# or_solver = ORSolver(vrp, actual_costs, travel_times, mip_gap=0, time_limit=20, verbose=True)
 
 solver.optimize()
 draw_solution(solver.get_active_arcs(), vrp)

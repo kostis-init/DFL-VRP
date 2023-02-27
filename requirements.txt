@@ -7,3 +7,5 @@ tensorflow~=2.11; sys_platform == "linux" or sys_platform == "win32"
 # tensorflow for macos, tensorflow-deps must be installed first
 tensorflow-macos~=2.11; sys_platform == "darwin"
 tensorflow-metal~=0.7; sys_platform == "darwin"
+
+ortools~=9.5
