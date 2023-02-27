@@ -18,7 +18,7 @@ def parse_datafile(file_path: str) -> VRP:
     columns = {field.name: field.type for field in fields(VRPNode)}
     df = pd.read_csv(file_path, sep='\s+', skiprows=1, names=columns)
     nodes = [VRPNode(**row) for row in df.to_dict('records')]
-    vehicles = [VRPVehicle(i) for i in range(1, 3)]
+    vehicles = [VRPVehicle(i) for i in range(1, 11)]
     return VRP(file_path, vehicles, nodes[0], nodes[1:])
 
 

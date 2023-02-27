@@ -81,7 +81,7 @@ class GurobiSolverMultiVehicle:
         # 4. Every vehicle leaves the depot.
         # Note: Combined with constraint 2, we ensure that every vehicle arrives again at the depot.
         # Note: If we use strict equality (== instead of >=), we ensure that every vehicle leaves depot and arrives exactly once.
-        self.model.addConstrs(gp.quicksum(self.x[depot, j, k] for j in customers) >= 1 for k in vehicles)
+        self.model.addConstrs(gp.quicksum(self.x[depot, j, k] for j in customers) == 1 for k in vehicles)
 
         # Sub-tour elimination. Using time windows, we can eliminate sub-tours by adding the following time constraints:
         # 5. Customers are visited after the previous customer is visited plus the travel time.
