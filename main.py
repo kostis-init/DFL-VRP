@@ -6,8 +6,9 @@ from solver import GurobiSolverMultiVehicle
 
 # todo: consider vehicle capacity/speed/cost
 
-vrp = parse_datafile('data/random/200/no_time.txt')
+# vrp = parse_datafile('data/random/200/no_time.txt')
 # vrp = parse_datafile('data/random/200/r101.txt')
+vrp = parse_datafile('data/random/200/c101.txt')
 # vrp = parse_datafile('data/random/200/r201.txt')
 # vrp = parse_datafile('data/random/200/r301.txt')
 
@@ -48,7 +49,7 @@ actual_costs = {(i, j): np.hypot(i.x - j.x, i.y - j.y) for i in vrp.nodes for j 
 speed = 10.0
 travel_times = {(i, j): vrp.service_times[i] + np.hypot(i.x - j.x, i.y - j.y)/speed for i in vrp.nodes for j in vrp.nodes}
 
-solver = GurobiSolverMultiVehicle(vrp, actual_costs, travel_times, mip_gap=0.02, time_limit=20, verbose=True)
+solver = GurobiSolverMultiVehicle(vrp, actual_costs, travel_times, mip_gap=0, time_limit=20, verbose=True)
 
 solver.optimize()
 draw_solution(solver.get_active_arcs(), vrp)
