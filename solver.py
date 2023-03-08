@@ -26,7 +26,7 @@ class GurobiSolverNoTime:
             gp.quicksum(self.x[i, j] * vrp.travel_times[i, j] for i, j in vrp.arcs), gp.GRB.MINIMIZE)
 
         # Add constraints
-        last_customer = vrp.nodes[-1]
+
         # Flow in
         self.model.addConstrs(gp.quicksum(self.x[i, j] for i in vrp.nodes) == 1 for j in vrp.customers)
         # Flow out
@@ -34,13 +34,13 @@ class GurobiSolverNoTime:
         # Depot balance
         self.model.addConstr(
             gp.quicksum(self.x[vrp.depot, j] for j in vrp.customers)
-            == gp.quicksum(self.x[i, last_customer] for i in vrp.customers))
+            == gp.quicksum(self.x[i, vrp.depot_dup] for i in vrp.customers))
         # Demand MTZ
         self.model.addConstrs(
-            self.u[j] >= self.u[i] + j.demand - vrp.capacity * (1 - self.x[i, j])
+            self.u[j] >= self.u[i] + j.demand * self.x[i, j] - vrp.capacity * (1 - self.x[i, j])
             for i, j in vrp.arcs)
         self.model.addConstrs(self.u[i] >= i.demand for i in vrp.nodes)
-        self.model.addConstrs(self.x[last_customer, j] == 0 for j in vrp.nodes)
+        self.model.addConstrs(self.x[vrp.depot_dup, j] == 0 for j in vrp.nodes)
 
     def optimize(self):
         self.model.optimize()

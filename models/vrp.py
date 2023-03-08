@@ -14,7 +14,8 @@ class VRP:
     capacity: float = 100000.0
 
     def __post_init__(self):
-        self.nodes = [self.depot] + self.customers
+        self.depot_dup = VRPNode(id=-1, x=self.depot.x, y=self.depot.y, demand=0, ready_time=0, due_date=0, service_time=0)
+        self.nodes = [self.depot] + self.customers + [self.depot_dup]
         self.arcs = [(i, j) for i in self.nodes for j in self.nodes]
         self.demands = {i: i.demand for i in self.nodes}
         self.service_times = {i: i.service_time for i in self.nodes}
