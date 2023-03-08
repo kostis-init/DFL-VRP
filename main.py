@@ -2,7 +2,7 @@ import numpy as np
 from util import *
 import random
 # import tensorflow as tf
-from solver import GurobiSolverNoTime
+from solver import GurobiSolverNoDemand
 
 
 # vrp = parse_datafile('data/no_time.txt')
@@ -27,7 +27,7 @@ for i, j in vrp.arcs:
         i.due_date + j.due_date,  # total due date of both nodes
     ])
 
-solver = GurobiSolverNoTime(vrp, mip_gap=0.2, time_limit=20, verbose=True)
+solver = GurobiSolverNoDemand(vrp, mip_gap=0, time_limit=20, verbose=True)
 
 solver.optimize()
 draw_solution(solver.get_active_arcs(), vrp)

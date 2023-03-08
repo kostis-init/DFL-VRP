@@ -19,9 +19,7 @@ def parse_datafile(file_path: str) -> VRP:
     columns = {field.name: field.type for field in fields(VRPNode)}
     df = pd.read_csv(file_path, sep='\s+', skiprows=1, names=columns)
     nodes = [VRPNode(**row) for row in df.to_dict('records')]
-    depot_dup = replace(nodes[0])
-    depot_dup.id = 1000
-    return VRP(file_path, nodes[0], nodes[1:] + [depot_dup])
+    return VRP(file_path, nodes[0], nodes[1:])
 
 
 def draw_solution(active_arcs: [tuple[VRPNode, VRPNode, VRPVehicle]], vrp: VRP) -> None:
