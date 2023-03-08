@@ -30,4 +30,4 @@ for i, j in vrp.arcs:
 solver = GurobiSolver(vrp, mip_gap=0, time_limit=20, verbose=True)
 
 solver.optimize()
-draw_solution(solver.get_active_arcs(), vrp)
+draw_solution(solver)
