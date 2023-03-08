@@ -11,7 +11,7 @@ class VRP:
     name: str  # name of the problem instance
     depot: VRPNode  # the depot node
     customers: [VRPNode]  # list of customer nodes
-    capacity: float = 100000.0
+    capacity: float = 10000000.0
 
     def __post_init__(self):
         self.nodes = [self.depot] + self.customers

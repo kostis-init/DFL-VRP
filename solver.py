@@ -4,7 +4,7 @@ from ortools.constraint_solver import pywrapcp
 from models.vrp import VRP
 
 
-class GurobiSolverNoDemand:
+class GurobiSolver:
 
     def __init__(self, vrp: VRP, mip_gap=0.2, time_limit=5, verbose=False):
         self.model = gp.Model('CVRPTW')
@@ -17,7 +17,9 @@ class GurobiSolverNoDemand:
         # x[i, j] = 1 if arc (i, j) is used on the route
         self.x = self.model.addVars(vrp.arcs, vtype=gp.GRB.BINARY, name='x')
         # s[i] = time point at which customer i is visited
-        self.s = self.model.addVars(vrp.customers, vtype=gp.GRB.CONTINUOUS, name='s', lb=0.0)
+        self.s = self.model.addVars(vrp.nodes, vtype=gp.GRB.CONTINUOUS, name='s', lb=0.0)
+        # u[i] = cumulative amount of load at customer i (including the demand of customer i)
+        self.u = self.model.addVars(vrp.nodes, vtype=gp.GRB.CONTINUOUS, name='u', lb=0.0, ub=vrp.capacity)
 
         # Add objective function
 
@@ -28,6 +30,7 @@ class GurobiSolverNoDemand:
         # Add constraints
         # Note: Using the formulation from https://how-to.aimms.com/Articles/332/332-Formulation-CVRP.html
 
+        # ARC CONSTRAINTS
         # 1. No travel from a node to itself.
         self.model.addConstrs(self.x[i, i] == 0 for i in vrp.nodes)
         # 2. Balance
@@ -37,16 +40,23 @@ class GurobiSolverNoDemand:
         # 3. Every customer is visited once.
         self.model.addConstrs(gp.quicksum(self.x[i, j] for i in vrp.nodes) == 1
                               for j in vrp.customers)
-        # 4. Every vehicle leaves the depot.
-        # self.model.addConstrs(self.x[vrp.depot, j] for j in vrp.customers >= 1)
-        # 5. Customers are visited after the previous customer is visited plus the travel time.
+
+        # TIME CONSTRAINTS
+        # 4. Customers are visited after the previous customer is visited plus the travel time.
         maximum_time = max(i.due_date + vrp.travel_times[i, j] - i.ready_time for i, j in vrp.arcs)
         self.model.addConstrs(self.s[j] >= self.s[i] + vrp.travel_times[i, j] - (1 - self.x[i, j]) * maximum_time
                               for i in vrp.customers for j in vrp.customers)
-        # 6. Customers are visited only after they are ready.
+        # 5. Customers are visited only after they are ready.
         self.model.addConstrs(self.s[i] >= i.ready_time for i in vrp.customers)
-        # 7. Customers are visited only before they are due.
+        # 6. Customers are visited only before they are due.
         self.model.addConstrs(self.s[i] <= i.due_date for i in vrp.customers)
+
+        # CAPACITY CONSTRAINTS
+        # 7. Depot is always empty.
+        self.model.addConstr(self.u[vrp.depot] == 0.0, name='depot_empty')
+        # 8. Load at a customer is the sum of the load at the previous customer plus the demand of the current customer.
+        self.model.addConstrs((self.x[i, j] == 1) >> (self.u[j] == self.u[i] + j.demand)
+                              for i in vrp.nodes for j in vrp.customers)
 
     def optimize(self):
         self.model.optimize()
