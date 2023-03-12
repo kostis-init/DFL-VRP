@@ -2,25 +2,29 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from models.vrp_edge import VRPEdge
 from models.vrp_node import VRPNode
-from models.vrp_vehicle import VRPVehicle
 
 
 @dataclass
 class VRP:
     name: str  # name of the problem instance
-    depot: VRPNode  # the depot node
-    customers: [VRPNode]  # list of customer nodes
-    capacity: float = 10000000.0
+    nodes: list[VRPNode]  # list of nodes
+    edges: list[VRPEdge]  # list of edges
+    depot: VRPNode  # depot node
+    capacity: float  # capacity of vehicles
 
     def __post_init__(self):
-        self.nodes = [self.depot] + self.customers
-        self.arcs = [(i, j) for i in self.nodes for j in self.nodes]
+        self.customers = [node for node in self.nodes if node != self.depot]
         self.demands = {i: i.demand for i in self.nodes}
         self.service_times = {i: i.service_time for i in self.nodes}
         self.ready_times = {i: i.ready_time for i in self.nodes}
-        self.due_dates = {i: i.due_date for i in self.nodes}
-        self.travel_times = {(i, j): i.service_time + np.hypot(i.x - j.x, i.y - j.y) for i, j in self.arcs}
+        self.due_times = {i: i.due_time for i in self.nodes}
+        self.incoming_edges = {i: [edge for edge in self.edges if edge.node2 == i] for i in self.nodes}
+        self.outgoing_edges = {i: [edge for edge in self.edges if edge.node1 == i] for i in self.nodes}
+
+    def get_edge(self, node1: VRPNode, node2: VRPNode) -> VRPEdge:
+        return next(edge for edge in self.edges if edge.node1 == node1 and edge.node2 == node2)
 
     def __str__(self):
         return f"VRP instance: {self.name}"

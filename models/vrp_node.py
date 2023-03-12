@@ -8,7 +8,7 @@ class VRPNode:
     y: float  # y coordinate of node
     demand: float  # demand of node
     ready_time: float  # ready time of node
-    due_date: float  # due date of node
+    due_time: float  # due date of node
     service_time: float  # service time of node
 
     def __str__(self):

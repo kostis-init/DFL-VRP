@@ -15,8 +15,8 @@ class GurobiSolver:
 
         # Add decision variables
 
-        # x[i, j] = 1 if arc (i, j) is used on the route
-        self.x = self.model.addVars(vrp.arcs, vtype=gp.GRB.BINARY, name='x')
+        # x[e] = 1 if edge e is used, 0 otherwise
+        self.x = self.model.addVars(vrp.edges, vtype=gp.GRB.BINARY, name='x')
         # s[i] = time point at which node i is visited
         self.s = self.model.addVars(vrp.nodes, vtype=gp.GRB.CONTINUOUS, name='s', lb=0.0)
         # u[i] = cumulative amount of load at node i (including the demand of customer i)
@@ -25,47 +25,50 @@ class GurobiSolver:
         # Add objective function
 
         # For now, we only consider the travel time
-        self.model.setObjective(
-            gp.quicksum(self.x[i, j] * vrp.travel_times[i, j] for i, j in vrp.arcs), gp.GRB.MINIMIZE)
+        self.model.setObjective(gp.quicksum(self.x[edge] * edge.cost for edge in vrp.edges), gp.GRB.MINIMIZE)
 
         # Add constraints
 
         # ARC CONSTRAINTS
-        # 1. No travel from a node to itself.
-        self.model.addConstrs(self.x[i, i] == 0 for i in vrp.nodes)
-        # 2. Balance
-        self.model.addConstrs(
-            gp.quicksum(self.x[i, j] for j in vrp.nodes) == gp.quicksum(self.x[j, i] for j in vrp.nodes)
-            for i in vrp.nodes)
-        # 3. Every customer is visited once.
-        self.model.addConstrs(gp.quicksum(self.x[i, j] for i in vrp.nodes) == 1
-                              for j in vrp.customers)
+        # 1. Balance of flow at each node.
+        self.model.addConstrs(gp.quicksum(self.x[incoming_edge] for incoming_edge in vrp.incoming_edges[i]) ==
+                              gp.quicksum(self.x[outgoing_edge] for outgoing_edge in vrp.outgoing_edges[i])
+                              for i in vrp.nodes)
+        # 2. Every customer is visited once.
+        self.model.addConstrs(gp.quicksum(self.x[edge] for edge in vrp.outgoing_edges[i]) == 1 for i in vrp.customers)
 
         # TIME CONSTRAINTS
-        # 4. Customers are visited after the previous customer is visited plus the travel time.
-        maximum_time = max(i.due_date + vrp.travel_times[i, j] - i.ready_time for i, j in vrp.arcs)
-        self.model.addConstrs(self.s[j] >= self.s[i] + vrp.travel_times[i, j] - (1 - self.x[i, j]) * maximum_time
-                              for i in vrp.nodes for j in vrp.customers)
-        # 5. Customers are visited only after they are ready.
+        # 3. Customers are visited after the previous customer is visited and serviced plus the travel time.
+        # maximum_time = max(i.due_time + i.service_time + vrp.get_edge(i, j).travel_time - i.ready_time
+        #                    for i in vrp.nodes for j in vrp.nodes if i != j)
+        self.model.addConstrs(self.s[j] >= self.s[i] + i.service_time + vrp.get_edge(i, j).travel_time
+                              - (1 - self.x[vrp.get_edge(i, j)]) * 1000000
+                              for i in vrp.nodes for j in vrp.customers if i != j)
+        # # 5. Nodes are visited only after they are ready.
         self.model.addConstrs(self.s[i] >= i.ready_time for i in vrp.nodes)
-        # 6. Customers are visited only before they are due.
-        self.model.addConstrs(self.s[i] <= i.due_date for i in vrp.nodes)
+        # # 6. Nodes are visited only before they are due.
+        self.model.addConstrs(self.s[i] <= i.due_time for i in vrp.nodes)
 
         # CAPACITY CONSTRAINTS
         # 7. Depot is always empty.
         self.model.addConstr(self.u[vrp.depot] == 0.0, name='depot_empty')
         # 8. Load at a customer is the sum of the load at the previous customer plus the demand of the current customer.
-        self.model.addConstrs((self.x[i, j] == 1) >> (self.u[j] == self.u[i] + j.demand)
-                              for i in vrp.nodes for j in vrp.customers)
+        self.model.addConstrs((self.x[vrp.get_edge(i, j)] == 1) >> (self.u[j] == self.u[i] + j.demand)
+                              for i in vrp.nodes for j in vrp.customers if i != j)
 
     def optimize(self):
         self.model.optimize()
+        # self.model.computeIIS()
+        # self.model.write('model.lp')
 
     def get_active_arcs(self):
         return [arc for arc in self.x.keys() if self.x[arc].x > 0.5]
 
     def get_start_times(self):
         return {node: self.s[node].x for node in self.s.keys()}
+
+    def get_loads(self):
+        return {node: self.u[node].x for node in self.u.keys()}
 
 # class ORSolver:
 #
