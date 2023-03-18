@@ -3,8 +3,8 @@ import numpy as np
 import os
 from util import euclidean_distance
 
-NUM_INSTANCES = 1000
-NUM_NODES = 25
+NUM_INSTANCES = 100
+NUM_NODES = 50
 
 MIN_COORD = 0
 MAX_COORD = 100
@@ -83,3 +83,5 @@ for i in range(NUM_INSTANCES):
 
     nodes.to_csv(nodes_file, index=False)
     edges.to_csv(edges_file, index=False)
+
+    print(f"Instance {i} generated")

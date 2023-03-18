@@ -10,6 +10,7 @@ import math
 
 
 def parse_datafile(instance_dir: str) -> VRP:
+    print(f'Parsing datafile: {instance_dir}...')
     nodes_file_path = f'{instance_dir}/nodes.csv'
     edges_file_path = f'{instance_dir}/edges.csv'
 
@@ -40,7 +41,6 @@ def parse_datafile(instance_dir: str) -> VRP:
             cost=row['cost']
         )
         edges.append(edge)
-
     return VRP(instance_dir, nodes, edges, nodes[0], 1_000_000)
 
 
@@ -89,6 +89,9 @@ def draw_solution(solver: GurobiSolver) -> None:
                 fig.canvas.draw_idle()
 
     fig.canvas.mpl_connect("motion_notify_event", hover)
+    # plot on maximized window
+    # mng = plt.get_current_fig_manager()
+    # mng.full_screen_toggle()
     plt.show()
 
 

@@ -5,18 +5,18 @@ from vrp.vrp_node import VRPNode
 
 @dataclass
 class VRPEdge:
-    node1: VRPNode
-    node2: VRPNode
-    distance: float
-    distance_to_depot: float
-    total_demand: float
-    is_customer: bool
-    total_service_time: float
-    total_due_time: float
-    total_ready_time: float
-    rain: float
-    traffic: float
-    cost: float
+    node1: VRPNode  # start node
+    node2: VRPNode  # end node
+    distance: float  # distance between start and end node
+    distance_to_depot: float  # distance between end node and depot
+    total_demand: float  # total demand of both nodes
+    is_customer: bool  # is start node or end node a customer
+    total_service_time: float  # total service time of both nodes
+    total_due_time: float  # total due time of both nodes
+    total_ready_time: float  # total ready time of both nodes
+    rain: float  # rain
+    traffic: float  # traffic
+    cost: float  # cost of edge, used for the objective function
 
     def __post_init__(self):
         self.travel_time = self.distance / 10
