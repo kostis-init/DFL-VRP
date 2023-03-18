@@ -49,10 +49,10 @@ class EdgeTrainer:
         self.loss_fn = nn.MSELoss()
         self.writer = SummaryWriter(log_dir=log_dir)
         self.patience = patience
-        self.best_loss = float('inf')
-        self.early_stop_counter = 0
 
     def train(self, num_epochs=50):
+        best_loss = float('inf')
+        early_stop_counter = 0
         for epoch in range(num_epochs):
             # Set model to training mode
             self.model.train()
@@ -87,15 +87,14 @@ class EdgeTrainer:
             print(f"Epoch {epoch}: Train Loss: {train_loss} | Test Loss: {test_loss}")
 
             # Early stopping
-            if test_loss < self.best_loss:
-                self.best_loss = test_loss
-                self.early_stop_counter = 0
+            if test_loss < best_loss:
+                best_loss = test_loss
+                early_stop_counter = 0
             else:
-                self.early_stop_counter += 1
-                if self.early_stop_counter >= self.patience:
+                early_stop_counter += 1
+                if early_stop_counter >= self.patience:
                     print(f"Early stopping at epoch {epoch}")
                     break
-
         self.writer.close()
 
     def predict(self, features):

@@ -55,7 +55,7 @@ class GurobiSolver:
         self.model.addConstrs((self.x[vrp.get_edge(i, j)] == 1) >> (self.u[j] == self.u[i] + j.demand)
                               for i in vrp.nodes for j in vrp.customers if i != j)
 
-    def optimize(self):
+    def solve(self):
         self.model.optimize()
         # self.model.computeIIS()
         # self.model.write('model.lp')
