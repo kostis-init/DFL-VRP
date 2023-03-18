@@ -1,7 +1,5 @@
 import gurobipy as gp
-from ortools.constraint_solver import pywrapcp
-
-from models.vrp import VRP
+from vrp.vrp import VRP
 
 
 class GurobiSolver:
@@ -41,18 +39,19 @@ class GurobiSolver:
         # 3. Customers are visited after the previous customer is visited and serviced plus the travel time.
         # maximum_time = max(i.due_time + i.service_time + vrp.get_edge(i, j).travel_time - i.ready_time
         #                    for i in vrp.nodes for j in vrp.nodes if i != j)
+        maximum_time = 1_000_000
         self.model.addConstrs(self.s[j] >= self.s[i] + i.service_time + vrp.get_edge(i, j).travel_time
-                              - (1 - self.x[vrp.get_edge(i, j)]) * 1000000
+                              - (1 - self.x[vrp.get_edge(i, j)]) * maximum_time
                               for i in vrp.nodes for j in vrp.customers if i != j)
-        # # 5. Nodes are visited only after they are ready.
+        # 4. Nodes are visited only after they are ready.
         self.model.addConstrs(self.s[i] >= i.ready_time for i in vrp.nodes)
-        # # 6. Nodes are visited only before they are due.
+        # 5. Nodes are visited only before they are due.
         self.model.addConstrs(self.s[i] <= i.due_time for i in vrp.nodes)
 
         # CAPACITY CONSTRAINTS
-        # 7. Depot is always empty.
+        # 6. Depot is always empty.
         self.model.addConstr(self.u[vrp.depot] == 0.0, name='depot_empty')
-        # 8. Load at a customer is the sum of the load at the previous customer plus the demand of the current customer.
+        # 7. Load at a customer is the sum of the load at the previous customer plus the demand of the current customer.
         self.model.addConstrs((self.x[vrp.get_edge(i, j)] == 1) >> (self.u[j] == self.u[i] + j.demand)
                               for i in vrp.nodes for j in vrp.customers if i != j)
 
@@ -69,9 +68,3 @@ class GurobiSolver:
 
     def get_loads(self):
         return {node: self.u[node].x for node in self.u.keys()}
-
-# class ORSolver:
-#
-#     def __init__(self, vrp: VRP, costs, travel_times, mip_gap=0.2, time_limit=5, verbose=False):
-#         manager = pywrapcp.RoutingIndexManager(len(vrp.nodes), len(vrp.vehicles), vrp.depot.id)
-#         routing = pywrapcp.RoutingModel(manager)

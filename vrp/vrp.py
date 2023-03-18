@@ -1,9 +1,7 @@
 from dataclasses import dataclass
 
-import numpy as np
-
-from models.vrp_edge import VRPEdge
-from models.vrp_node import VRPNode
+from vrp.vrp_edge import VRPEdge
+from vrp.vrp_node import VRPNode
 
 
 @dataclass

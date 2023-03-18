@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from models.vrp_node import VRPNode
+from vrp.vrp_node import VRPNode
 
 
 @dataclass
@@ -19,7 +19,9 @@ class VRPEdge:
     cost: float
 
     def __post_init__(self):
-        self.travel_time = self.distance / 50
+        self.travel_time = self.distance / 10
+        self.features = [self.distance, self.distance_to_depot, self.total_demand, self.is_customer,
+                         self.total_service_time, self.total_due_time, self.total_ready_time, self.rain, self.traffic]
 
     def __str__(self):
         return f"{self.node1} -> {self.node2}"

@@ -1,9 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx
-from models.vrp_node import VRPNode
-from models.vrp_edge import VRPEdge
-from models.vrp import VRP
+from vrp.vrp_node import VRPNode
+from vrp.vrp_edge import VRPEdge
+from vrp.vrp import VRP
 from dataclasses import fields
 from solver import GurobiSolver
 import math
