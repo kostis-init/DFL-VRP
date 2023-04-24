@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 from torch.optim import Adam
-from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 
 
@@ -41,13 +40,12 @@ class EdgeCostPredictor(nn.Module):
 
 
 class EdgeTrainer:
-    def __init__(self, train_set, test_set, log_dir='logs', lr=0.001, patience=5):
+    def __init__(self, train_set, test_set, lr=0.001, patience=5):
         self.train_dataloader = DataLoader(VRPDataset(train_set), batch_size=32, shuffle=True)
         self.test_dataloader = DataLoader(VRPDataset(test_set), batch_size=32, shuffle=True)
         self.model = EdgeCostPredictor(len(train_set[0].edges[0].features), 32, 1)
         self.optimizer = Adam(self.model.parameters(), lr=lr)
         self.loss_fn = nn.MSELoss()
-        self.writer = SummaryWriter(log_dir=log_dir)
         self.patience = patience
 
     def train(self, num_epochs=50):
@@ -57,7 +55,7 @@ class EdgeTrainer:
             # Set model to training mode
             self.model.train()
             train_loss = 0.0
-            for batch_idx, (features, targets) in enumerate(self.train_dataloader):
+            for features, targets in self.train_dataloader:
                 # Zero the gradients
                 self.optimizer.zero_grad()
                 # Forward pass
@@ -81,9 +79,6 @@ class EdgeTrainer:
                     test_loss += self.loss_fn(self.model(features), targets).item()
             test_loss /= len(self.test_dataloader)
 
-            # Log metrics to tensorboard and print to console
-            self.writer.add_scalar('Loss/Train', train_loss, epoch)
-            self.writer.add_scalar('Loss/Test', test_loss, epoch)
             print(f"Epoch {epoch}: Train Loss: {train_loss} | Test Loss: {test_loss}")
 
             # Early stopping
@@ -95,7 +90,6 @@ class EdgeTrainer:
                 if early_stop_counter >= self.patience:
                     print(f"Early stopping at epoch {epoch}")
                     break
-        self.writer.close()
 
     def predict(self, features):
         """

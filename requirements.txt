@@ -1,13 +1,13 @@
-numpy~=1.24
-pandas~=1.5
-matplotlib~=3.7
-networkx~=3.0
-gurobipy~=10.0
-tensorflow~=2.11; sys_platform == "linux" or sys_platform == "win32"
+numpy>=1.24
+pandas>=2.0
+matplotlib>=3.7.1
+networkx>=3.1
+gurobipy>=10.0
+# tensorflow>=2.11; sys_platform == "linux" or sys_platform == "win32"
 # tensorflow for macos, tensorflow-deps must be installed first
-tensorflow-macos==2.9; sys_platform == "darwin"
-tensorflow-metal==0.5.0; sys_platform == "darwin"
-protobuf~=3.19
-torch~=1.10
-keras~=2.9.0
-torchmetrics~=0.11.4
+# tensorflow-macos>=2.12; sys_platform == "darwin"
+# tensorflow-metal>=0.8.0; sys_platform == "darwin"
+protobuf~=3.20
+torch>=2.0
+# keras>=2.9.0
+torchmetrics>=0.11.4

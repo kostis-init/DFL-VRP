@@ -3,8 +3,9 @@ import numpy as np
 import os
 from util import euclidean_distance
 
-NUM_INSTANCES = 100
-NUM_NODES = 50
+
+NUM_INSTANCES = 20
+NUM_NODES = 200
 
 MIN_COORD = 0
 MAX_COORD = 100
@@ -13,20 +14,20 @@ MIN_DEMAND = 1
 MAX_DEMAND = 10
 
 MIN_READY_TIME = 0
-MAX_READY_TIME = 30
+MAX_READY_TIME = 10
 
-MIN_DUE_TIME = 70
-MAX_DUE_TIME = 100
+MIN_DUE_TIME = 10000
+MAX_DUE_TIME = 10000
 
 MIN_SERVICE_TIME = 1
-MAX_SERVICE_TIME = 10
+MAX_SERVICE_TIME = 5
 
 MIN_RAIN = 0
 MAX_RAIN = 1
 MIN_TRAFFIC = 0
 MAX_TRAFFIC = 1
 
-OUTPUT_PATH = "./data/generated/"
+OUTPUT_PATH = f'./data/non_linear_{NUM_INSTANCES}_{NUM_NODES}/'
 if not os.path.exists(OUTPUT_PATH):
     os.makedirs(OUTPUT_PATH)
 
@@ -71,8 +72,11 @@ for i in range(NUM_INSTANCES):
             due_time = round(min(n1["due_time"], n2["due_time"]), 2)
             rain = round(np.random.uniform(MIN_RAIN, MAX_RAIN), 2)
             traffic = round(np.random.uniform(MIN_TRAFFIC, MAX_TRAFFIC), 2)
-            cost = round(dist + dist_depot + 10 * demand + 100 * is_customer + 10 * svc_time
-                         + rd_time + due_time + 50 * rain + 50 * traffic, 2)
+            # cost is a polynomial function of the features
+            noise = np.random.normal(0, 0.1)
+            cost = dist ** 2 + dist_depot ** 2 + rain ** 2 + traffic ** 2
+            cost += noise ** 2
+            cost = round(cost, 2)
             edges.append(
                 [j, k, dist, dist_depot, demand, is_customer, svc_time, rd_time, due_time, rain, traffic, cost])
 

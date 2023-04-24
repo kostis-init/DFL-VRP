@@ -10,7 +10,7 @@ import math
 
 
 def parse_datafile(instance_dir: str) -> VRP:
-    print(f'Parsing datafile: {instance_dir}...')
+    # print(f'Parsing datafile: {instance_dir}...')
     nodes_file_path = f'{instance_dir}/nodes.csv'
     edges_file_path = f'{instance_dir}/edges.csv'
 
@@ -56,12 +56,13 @@ def draw_solution(solver: GurobiSolver) -> None:
     node_colors = ['red' if i == vrp.depot else 'green' for i in vrp.nodes]
 
     fig, ax = plt.subplots()
-    attrs = {i: {'start_time': solver.get_start_times()[i],
-                 'cumulative_demand': solver.get_loads()[i],
-                 'demand': i.demand,
-                 'service_time': i.service_time,
-                 'ready_time': i.ready_time,
-                 'due_date': i.due_time} for i in vrp.nodes}
+    # round to 2 decimals
+    attrs = {i: {'start_time': round(solver.get_start_times()[i], 2),
+                 'cumulative_demand': round(solver.get_loads()[i], 2),
+                 'demand': round(i.demand, 2),
+                 'service_time': round(i.service_time, 2),
+                 'ready_time': round(i.ready_time, 2),
+                 'due_date': round(i.due_time, 2)} for i in vrp.nodes}
     nx.set_node_attributes(graph, attrs)
 
     nodes = nx.draw_networkx_nodes(G=graph, pos=pos, ax=ax, node_color=node_colors, node_size=50)
