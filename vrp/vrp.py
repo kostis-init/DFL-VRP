@@ -21,9 +21,8 @@ class VRP:
         self.incoming_edges = {i: [edge for edge in self.edges if edge.node2 == i] for i in self.nodes}
         self.outgoing_edges = {i: [edge for edge in self.edges if edge.node1 == i] for i in self.nodes}
         self.find_edge_from_nodes = {(edge.node1, edge.node2): edge for edge in self.edges}
-
-    def get_edge(self, node1: VRPNode, node2: VRPNode) -> VRPEdge:
-        return next(edge for edge in self.edges if edge.node1 == node1 and edge.node2 == node2)
+        self.actual_solution = None
+        self.actual_obj = None
 
     def __str__(self):
         return f"VRP instance: {self.name}"

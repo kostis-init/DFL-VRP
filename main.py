@@ -1,18 +1,7 @@
 from util import *
 import numpy as np
-# from keras_model import EdgeTrainer
 from edge_model import EdgeTrainer
 
-
-# TODO: Implement the model
-# maybe consider graph neural networks
-# class DFLModel(tf.keras.Model):
-#     """
-#     This class implements a Decision Focused Learning model for solving VRPs.
-#     More specifically, the input will be VRP instances, and the output will be the
-#     optimal routes for each vehicle using the class GurobiSolver. The costs of each
-#     edge is unknown and will be learned by the model.
-#     """
 
 def test(trainer, vrp_instances_test):
     # Iterate over the test set and print the accuracy of the model
@@ -31,7 +20,7 @@ def test(trainer, vrp_instances_test):
             edge.predicted_cost = trainer.predict([edge.features])
         # solve gurobi with predicted edge costs
         solver = GurobiSolver(inst)
-        solver.enable_predicted_objective()
+        solver.set_predicted_objective()
         solver.solve()
         predicted_edges = solver.get_active_arcs()
         # for predicted sols cost, we have to use the actual edge costs of the predicted edges
