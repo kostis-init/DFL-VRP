@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from vrp.vrp_node import VRPNode
+from domain.vrp_node import VRPNode
 
 
 @dataclass
@@ -8,11 +8,11 @@ class VRPEdge:
     node1: VRPNode  # start node
     node2: VRPNode  # end node
     distance: float  # distance between start and end node
-    features: list[float]  # list of features
+    features: [float]  # list of features
     cost: float  # cost of edge
 
     def __post_init__(self):
-        self.features = [self.distance] + self.features
+        # self.features = [self.distance] + self.features
         self.predicted_cost = None
 
     def __str__(self):
