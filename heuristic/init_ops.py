@@ -28,6 +28,8 @@ def init_routes_nn(solver):
                 nearest = min(unvisited, key=lambda node: vrp.distance(current_node, node))
             else:
                 raise ValueError(f"Unknown solver mode {solver.mode}.")
+            if sum(node.demand for node in route) + nearest.demand > vrp.capacity:
+                break
             # add the nearest node to the route
             route.append(nearest)
             # remove the nearest node from the unvisited nodes

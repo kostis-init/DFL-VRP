@@ -19,6 +19,7 @@ class NCE(torch.nn.Module):
             # print(f'pred_cost: {pred_cost}')
             # print(f'true_cost: {true_cost}')
             loss += torch.dot((pred_cost - true_cost), (torch.DoubleTensor(np.array(true_sol)) - torch.DoubleTensor(non_optimal_sol)))
+            # loss += torch.dot(pred_cost, (torch.FloatTensor(true_sol) - torch.FloatTensor(non_optimal_sol)))
 
         return loss
 

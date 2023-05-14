@@ -11,18 +11,22 @@ from solver import GurobiSolver
 import math
 import numpy as np
 import torch
+import os
 
 
 def parse_datafile(instance_dir: str) -> VRP:
-    print(f'Parsing datafile: {instance_dir}...')
+    # print(f'Parsing datafile: {instance_dir}...')
     nodes_file_path = f'{instance_dir}/nodes.csv'
     edges_file_path = f'{instance_dir}/edges.csv'
     metadata_file_path = f'{instance_dir}/metadata.csv'
+    solution_file_path = f'{instance_dir}/solution.txt'
 
+    # Nodes
     nodes_columns = {field.name: field.type for field in fields(VRPNode)}
     nodes_df = pd.read_csv(nodes_file_path, skiprows=1, names=nodes_columns, sep=',')
     nodes = [VRPNode(**row) for row in nodes_df.to_dict('records')]
 
+    # Edges
     edges_df = pd.read_csv(edges_file_path, skiprows=0, sep=',')
     edges = []
     for _, row in edges_df.iterrows():
@@ -32,10 +36,23 @@ def parse_datafile(instance_dir: str) -> VRP:
         edge = VRPEdge(node1=node1, node2=node2, distance=row[2], features=row[3:-1].tolist(), cost=row[-1])
         edges.append(edge)
 
+    # Metadata
     metadata_df = pd.read_csv(metadata_file_path)
     capacity = metadata_df['capacity'][0]
 
-    return VRP(instance_dir, nodes, edges, nodes[0], capacity)
+    # Solution
+    routes, objective = None, None
+    if os.path.exists(solution_file_path):
+        # first line contains the routes, which is a list of lists of node ids
+        # second line contains the objective value
+        with open(solution_file_path, 'r') as f:
+            routes = eval(f.readline())
+            # convert node ids to node objects
+            routes = [[next(node for node in nodes if node.id == node_id) for node_id in route] for route in routes]
+            objective = float(f.readline())
+
+
+    return VRP(instance_dir, nodes, edges, nodes[0], capacity, routes, None, objective)
 
 
 # TODO: check
