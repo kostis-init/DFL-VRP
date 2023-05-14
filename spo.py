@@ -27,9 +27,7 @@ class SPOplusFunction(torch.autograd.Function):
         return loss
 
     @staticmethod
-    def backward(ctx, grad_loss):
-        # grad_loss is a scalar tensor containing the gradient of the loss with respect to the output of the forward
-        # function (i.e. the loss) (dL/dloss) = 1 in this case (see https://pytorch.org/docs/stable/notes/extending.html#gradients)
+    def backward(ctx, grad_output):
 
         true_decision, spo_decision = ctx.saved_tensors
         # print('BACKWARD')
@@ -37,7 +35,7 @@ class SPOplusFunction(torch.autograd.Function):
         # print(f'true_decision: {true_decision}')
         # print(f'spo_decision: {spo_decision}')
         # print(f'result: {grad_loss * 2 * (true_decision - spo_decision)}')
-        return grad_loss * 2 * (true_decision - spo_decision), None, None, None, None
+        return grad_output * 2 * (true_decision - spo_decision), None, None, None, None
 
 
 class SPOplus(torch.nn.Module):
@@ -60,10 +58,14 @@ class CostPredictor(torch.nn.Module):
 
     def __init__(self, input_size, output_size):
         super().__init__()
-        self.fc = nn.Linear(input_size, output_size)
+        self.fc1 = nn.Linear(input_size, output_size)
+
 
     def forward(self, x):
         x = x.view(-1)
-        x = self.fc(x)
+        x = self.fc1(x)
+        # x = torch.relu(x)
+        # x = self.fc2(x)
         # x = torch.sigmoid(x)
+
         return x

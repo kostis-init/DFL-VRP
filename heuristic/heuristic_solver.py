@@ -26,14 +26,14 @@ class HeuristicSolver:
                  vrp: VRP,
                  mode: SolverMode = SolverMode.TRUE_COST,
                  seed: int = 1234,
-                 max_runtime: float = 0.1,
+                 time_limit: float = 0.1,
                  num_iterations: int = 10000):
         """
         Initialize the heuristic solver. The solver uses the ALNS framework to solve the VRP instance.
         :param vrp: The VRP instance.
         :param mode: The mode of the solver. This determines the objective function of the model.
         :param seed: The seed for the random number generator.
-        :param max_runtime: The maximum runtime of the solver in seconds.
+        :param time_limit: The maximum runtime of the solver in seconds.
         :param num_iterations: The maximum number of iterations of the solver.
         """
         self.vrp = vrp
@@ -51,7 +51,7 @@ class HeuristicSolver:
             self.accept = RecordToRecordTravel.autofit(self.state.objective(), 0.02, 0, num_iterations)
         else:
             self.accept = RecordToRecordTravel.autofit(100, 0.02, 0, num_iterations)
-        self.stop = MaxRuntime(max_runtime)
+        self.stop = MaxRuntime(time_limit)
 
     def solve(self):
         """
@@ -65,6 +65,9 @@ class HeuristicSolver:
 
     def get_actual_objective(self):
         return self.state.true_cost()
+
+    def get_pred_objective(self):
+        return self.state.pred_cost()
 
     def get_spo_objective(self):
         return self.state.spo_objective()

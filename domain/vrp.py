@@ -11,68 +11,48 @@ class VRP:
     edges: [VRPEdge]  # list of edges
     depot: VRPNode  # depot node
     capacity: float  # capacity of vehicles
+    actual_routes: [[VRPNode]]  # the actual routes of the optimal solution
+    actual_solution: [int]  # the optimal solution, i.e. the decision variables of the optimal solution
+    actual_obj: float  # actual objective value of the optimal solution
 
     def __post_init__(self):
         self.customers = [node for node in self.nodes if node != self.depot]
         self.incoming_edges = {i: [edge for edge in self.edges if edge.node2 == i] for i in self.nodes}
         self.outgoing_edges = {i: [edge for edge in self.edges if edge.node1 == i] for i in self.nodes}
         self.find_edge_from_nodes = {(edge.node1, edge.node2): edge for edge in self.edges}
-        self.actual_solution = None
-        self.actual_obj = None
+        if self.actual_routes is not None:
+            self.actual_solution = self.get_decision_variables(self.actual_routes)
+
 
     def route_cost(self, route: [VRPNode]):
-        """
-        Computes the cost of a single route.
-        """
         return self.cost(self.depot, route[0]) + sum(
             self.cost(node1, node2) for node1, node2 in zip(route[:-1], route[1:])) + self.cost(route[-1], self.depot)
 
     def route_spo_cost(self, route: [VRPNode]):
-        """
-        Computes the spo cost of a single route.
-        """
         return self.spo_cost(self.depot, route[0]) + sum(
             self.spo_cost(node1, node2) for node1, node2 in zip(route[:-1], route[1:])) + self.spo_cost(route[-1],
                                                                                                         self.depot)
 
     def route_pred_cost(self, route: [VRPNode]):
-        """
-        Computes the cost of a single route.
-        """
         return self.pred_cost(self.depot, route[0]) + sum(
             self.pred_cost(node1, node2) for node1, node2 in zip(route[:-1], route[1:])) + self.pred_cost(route[-1],
                                                                                                           self.depot)
 
     def route_distance(self, route: [VRPNode]):
-        """
-        Computes the total distance of a single route.
-        """
         return self.distance(self.depot, route[0]) + sum(
             self.distance(node1, node2) for node1, node2 in zip(route[:-1], route[1:])) + self.distance(route[-1],
                                                                                                         self.depot)
 
     def distance(self, node1: VRPNode, node2: VRPNode):
-        """
-        Returns the distance between two nodes.
-        """
         return self.find_edge_from_nodes[(node1, node2)].distance
 
     def cost(self, node1: VRPNode, node2: VRPNode):
-        """
-        Returns the distance between two nodes.
-        """
         return self.find_edge_from_nodes[(node1, node2)].cost
 
     def pred_cost(self, node1: VRPNode, node2: VRPNode):
-        """
-        Returns the predicted distance between two nodes.
-        """
         return self.find_edge_from_nodes[(node1, node2)].predicted_cost
 
     def spo_cost(self, node1: VRPNode, node2: VRPNode):
-        """
-        Returns the spo cost between two nodes.
-        """
         return - self.find_edge_from_nodes[(node1, node2)].cost + 2 * self.find_edge_from_nodes[
             (node1, node2)].predicted_cost
 

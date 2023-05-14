@@ -12,9 +12,9 @@ class GurobiSolver:
 
     def __init__(self,
                  vrp: VRP = None,
-                 mip_gap: float = 0.0,
+                 mip_gap: float = None,
                  verbose: int = 0,
-                 time_limit: float = 0.0,
+                 time_limit: float = None,
                  mode: SolverMode = SolverMode.TRUE_COST):
         """
         Initializes the Gurobi solver.
@@ -32,10 +32,10 @@ class GurobiSolver:
             raise Exception('VRP is None')
         self.vrp = vrp
         self.model = gp.Model('CVRPTW')
-        if mip_gap > 0.0:
+        if mip_gap is not None:
             self.model.Params.MIPGap = mip_gap
         self.model.Params.OutputFlag = verbose
-        if time_limit > 0.0:
+        if time_limit is not None:
             self.model.Params.TimeLimit = time_limit
 
         self.x = None
@@ -54,23 +54,19 @@ class GurobiSolver:
         """
         if mode == SolverMode.TRUE_COST:
             self.model.setObjective(
-                gp.quicksum(self.x[edge] * edge.cost
-                            for edge in self.vrp.edges),
+                gp.quicksum(self.x[edge] * edge.cost for edge in self.vrp.edges),
                 gp.GRB.MINIMIZE)
         elif mode == SolverMode.PRED_COST:
             self.model.setObjective(
-                gp.quicksum(self.x[edge] * edge.predicted_cost
-                            for edge in self.vrp.edges),
+                gp.quicksum(self.x[edge] * edge.predicted_cost for edge in self.vrp.edges),
                 gp.GRB.MINIMIZE)
         elif mode == SolverMode.SPO:
             self.model.setObjective(
-                gp.quicksum(self.x[edge] * (edge.cost - 2 * edge.predicted_cost)
-                            for edge in self.vrp.edges),
-                gp.GRB.MAXIMIZE)
+                gp.quicksum(self.x[edge] * (2 * edge.predicted_cost - edge.cost) for edge in self.vrp.edges),
+                gp.GRB.MINIMIZE)
         elif mode == SolverMode.DISTANCE:
             self.model.setObjective(
-                gp.quicksum(self.x[edge] * edge.distance
-                            for edge in self.vrp.edges),
+                gp.quicksum(self.x[edge] * edge.distance for edge in self.vrp.edges),
                 gp.GRB.MINIMIZE)
         else:
             raise Exception('Invalid solver mode')
@@ -138,6 +134,10 @@ class GurobiSolver:
 
     def get_spo_objective(self):
         return sum(self.x[edge].x * (edge.cost - 2 * edge.predicted_cost)
+                   for edge in self.vrp.edges)
+
+    def get_pred_objective(self):
+        return sum(self.x[edge].x * edge.predicted_cost
                    for edge in self.vrp.edges)
 
     def add_decision_variables(self) -> None:
