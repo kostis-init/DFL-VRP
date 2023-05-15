@@ -53,8 +53,8 @@ class VRP:
         return self.find_edge_from_nodes[(node1, node2)].predicted_cost
 
     def spo_cost(self, node1: VRPNode, node2: VRPNode):
-        return - self.find_edge_from_nodes[(node1, node2)].cost + 2 * self.find_edge_from_nodes[
-            (node1, node2)].predicted_cost
+        return 2 * self.find_edge_from_nodes[(node1, node2)].predicted_cost - self.find_edge_from_nodes[
+            (node1, node2)].cost
 
     def get_decision_variables(self, routes: [[VRPNode]]) -> [int]:
         """

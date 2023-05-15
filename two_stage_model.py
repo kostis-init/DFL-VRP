@@ -27,20 +27,21 @@ class VRPDataset(Dataset):
 class EdgeCostPredictor(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
-        self.fc = nn.Linear(input_size, output_size)
-        # self.fc = nn.Sequential(
-        #     nn.Linear(input_size, hidden_size),
-        #     nn.ReLU(),
-        #     nn.Linear(hidden_size, output_size)
-        # )
+        # self.fc = nn.Linear(input_size, output_size)
+        self.fc = nn.Sequential(
+            nn.Linear(input_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, output_size)
+        )
 
     def forward(self, x):
         return self.fc(x)
 
 
-class EdgeTrainer:
-    def __init__(self, train_set, test_set, lr=0.001, patience=5):
+class TwoStageModel:
+    def __init__(self, train_set, val_set, test_set, lr=1e-3, patience=5):
         self.train_dataloader = DataLoader(VRPDataset(train_set), batch_size=32, shuffle=True)
+        self.val_dataloader = DataLoader(VRPDataset(val_set), batch_size=32, shuffle=True)
         self.test_dataloader = DataLoader(VRPDataset(test_set), batch_size=32, shuffle=True)
         self.model = EdgeCostPredictor(len(train_set[0].edges[0].features), 32, 1)
         self.optimizer = Adam(self.model.parameters(), lr=lr)
@@ -70,25 +71,34 @@ class EdgeTrainer:
             # Compute average training loss for the epoch
             train_loss /= len(self.train_dataloader)
 
-            # Calculate test set loss for the epoch
+            # Calculate val set loss for the epoch
             self.model.eval()
-            test_loss = 0.0
+            val_loss = 0.0
             with torch.no_grad():
-                for batch_idx, (features, targets) in enumerate(self.test_dataloader):
-                    test_loss += self.loss_fn(self.model(features), targets).item()
-            test_loss /= len(self.test_dataloader)
+                for batch_idx, (features, targets) in enumerate(self.val_dataloader):
+                    val_loss += self.loss_fn(self.model(features), targets).item()
+            val_loss /= len(self.val_dataloader)
 
-            print(f"Epoch {epoch}: Train Loss: {train_loss} | Test Loss: {test_loss}")
+            print(f"Epoch {epoch}: Train Loss: {train_loss} | Validation Loss: {val_loss}")
 
             # Early stopping
-            if test_loss < best_loss:
-                best_loss = test_loss
+            if val_loss < best_loss:
+                best_loss = val_loss
                 early_stop_counter = 0
             else:
                 early_stop_counter += 1
                 if early_stop_counter >= self.patience:
                     print(f"Early stopping at epoch {epoch}")
                     break
+
+    def test(self):
+        self.model.eval()
+        test_loss = 0.0
+        with torch.no_grad():
+            for batch_idx, (features, targets) in enumerate(self.test_dataloader):
+                test_loss += self.loss_fn(self.model(features), targets).item()
+        test_loss /= len(self.test_dataloader)
+        print(f"Test Loss: {test_loss}")
 
     def predict(self, features):
         """

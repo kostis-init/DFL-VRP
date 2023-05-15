@@ -18,10 +18,6 @@ from domain.vrp_node import VRPNode
 
 
 class HeuristicSolver:
-    """
-    The heuristic solver uses the ALNS framework to solve Vehicle Routing Problems.
-    """
-
     def __init__(self,
                  vrp: VRP,
                  mode: SolverMode = SolverMode.TRUE_COST,
@@ -47,16 +43,10 @@ class HeuristicSolver:
         # The RouletteWheel selection operator is used to select the next operator to apply.
         self.select = RouletteWheel([25, 5, 1, 0], 0.8, 1, 1)
         # The RecordToRecordTravel acceptance operator is used to accept solutions.
-        if self.state.objective() > 0:
-            self.accept = RecordToRecordTravel.autofit(self.state.objective(), 0.02, 0, num_iterations)
-        else:
-            self.accept = RecordToRecordTravel.autofit(100, 0.02, 0, num_iterations)
+        self.accept = RecordToRecordTravel.autofit(self.state.objective(), 0.02, 0, num_iterations)
         self.stop = MaxRuntime(time_limit)
 
     def solve(self):
-        """
-        Solve the VRP instance.
-        """
         result = self.alns.iterate(self.state, self.select, self.accept, self.stop)
         self.state = result.best_state
 
@@ -76,13 +66,7 @@ class HeuristicSolver:
         return self.vrp.get_decision_variables(self.state.routes)
 
     def get_loads(self):
-        """
-        Returns a list of cumulative loads.
-        """
         return self.vrp.get_loads(self.state.routes)
-
-    def set_spo_objective(self):
-        self.mode = 'spo'
 
     def get_active_arcs(self):
         """
@@ -93,7 +77,7 @@ class HeuristicSolver:
 
 class CvrpState(State):
     """
-    Solution state for CVRP. Contains the VRP instance, the routes and the unassigned nodes.
+    Solution state for CVRP. Contains the routes and the unassigned nodes.
     """
 
     def __init__(self, solver: HeuristicSolver, routes: [[VRPNode]], unassigned: [VRPNode]):
@@ -105,21 +89,12 @@ class CvrpState(State):
         return CvrpState(self.solver, copy.deepcopy(self.routes), copy.deepcopy(self.unassigned))
 
     def spo_objective(self):
-        """
-        Computes the total route spo costs.
-        """
-        return -sum(self.solver.vrp.route_spo_cost(route) for route in self.routes)
+        return sum(self.solver.vrp.route_spo_cost(route) for route in self.routes)
 
     def true_cost(self):
-        """
-        Computes the total route costs.
-        """
         return sum(self.solver.vrp.route_cost(route) for route in self.routes)
 
     def pred_cost(self):
-        """
-        Computes the total route pred costs.
-        """
         return sum(self.solver.vrp.route_pred_cost(route) for route in self.routes)
 
     def objective(self) -> float:
@@ -135,13 +110,6 @@ class CvrpState(State):
             return self.pred_cost()
         else:
             raise ValueError(f"Invalid solver mode {mode}.")
-
-    @property
-    def cost(self):
-        """
-        Alias for objective method. Used for plotting.
-        """
-        return self.objective()
 
     def find_route(self, node: VRPNode):
         """

@@ -8,13 +8,6 @@ from util import parse_datafile
 
 # Define the Gumbel-Softmax relaxation function
 def gumbel_softmax(logits, temperature):
-    """
-    Converts logits to a relaxed one-hot vector using the Gumbel-Softmax trick. The output is a vector of probabilities
-    that sum to 1.
-    :param logits:
-    :param temperature:
-    :return:
-    """
     gumbel_noise = -torch.log(-torch.log(torch.rand_like(logits) + 1e-10) + 1e-10)
     softmax_output = nn.functional.softmax((logits + gumbel_noise) / temperature, dim=1)
     return softmax_output

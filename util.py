@@ -134,7 +134,8 @@ def euclidean_distance(x1, y1, x2, y2):
     return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
 
-def test(model, instances, solver_, is_two_stage=True):
+def test(model, instances, solver_, is_two_stage=True, verbose=False):
+    model.eval()
     with torch.no_grad():
         accuracy = 0.0
         actual_sols_cost = 0.0
@@ -149,11 +150,11 @@ def test(model, instances, solver_, is_two_stage=True):
 
             if is_two_stage:
                 for edge in inst.edges:
-                    edge.predicted_cost = model.predict([edge.features])
+                    edge.predicted_cost = model.predict(edge.features)
             else:
                 predicted_edge_costs = model(torch.tensor([edge.features for edge in inst.edges]))
                 for i, edge in enumerate(inst.edges):
-                    edge.predicted_cost = predicted_edge_costs[i]
+                    edge.predicted_cost = predicted_edge_costs[i].detach().item()
 
             solver = solver_(inst, mode=SolverMode.PRED_COST)
             solver.solve()
@@ -164,8 +165,8 @@ def test(model, instances, solver_, is_two_stage=True):
             regret += predicted_obj - actual_obj
             correct_edges = set(actual_edges).intersection(predicted_edges)
             accuracy += float(len(correct_edges)) / len(predicted_edges)
-            print(f'Parsed instance {inst}, accuracy: {accuracy}, actual cost: {actual_sols_cost}, '
-                  f'predicted cost: {predicted_sols_cost}')
+            if verbose:
+                print(f'Parsed instance {inst}, accuracy: {accuracy}, actual cost: {actual_sols_cost}, predicted cost: {predicted_sols_cost}')
         regret /= len(instances)
         accuracy /= len(instances)
         cost_comparison = predicted_sols_cost / actual_sols_cost
@@ -173,6 +174,7 @@ def test(model, instances, solver_, is_two_stage=True):
 
 
 def test_and_draw(trainer, vrp):
+    trainer.model.eval()
     print(f'Testing example instance {vrp}, '
           f'predicted cost: {trainer.predict([vrp.edges[0].features])}, '
           f'actual cost: {vrp.edges[0].cost}')
@@ -195,16 +197,3 @@ def test_and_draw(trainer, vrp):
     print(f'Correct edges ({len(correct_edges)}): {correct_edges}')
 
 
-def validation_loss(cost_model, vrps, spo_plus, solver_):
-    with torch.no_grad():
-        loss = 0.0
-        for vrp in vrps:
-            edge_features = torch.tensor([edge.features for edge in vrp.edges])
-            predicted_edge_costs = cost_model(edge_features)
-            for i, edge in enumerate(vrp.edges):
-                edge.predicted_cost = predicted_edge_costs[i]
-            solver = solver_(vrp, mode=SolverMode.SPO)
-            solver.solve()
-            loss += spo_plus(predicted_edge_costs, vrp.actual_solution, vrp.actual_obj, solver.get_decision_variables(),
-                             solver.get_spo_objective())
-        return loss / len(vrps)

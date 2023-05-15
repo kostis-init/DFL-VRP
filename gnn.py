@@ -66,18 +66,32 @@ def graph_to_edge_index(edges: [VRPEdge]):
 
 
 class GATModel(nn.Module):
-    def __init__(self, num_edge_features, edges):
+    def __init__(self, num_features, edges, hidden_size=32, target_size=1):
         super(GATModel, self).__init__()
 
         self.edge_index = torch.tensor(graph_to_edge_index(edges), dtype=torch.long).t().contiguous()
-        self.conv1 = GATConv(num_edge_features, 32, heads=4)
-        self.conv2 = GATConv(32*4, 1, heads=1)
+        # self.conv1 = GATConv(num_edge_features, 32, heads=4)
+        # self.conv2 = GATConv(32*4, 1, heads=1)
+        # self.linear = nn.Linear(32*4, 1)
+
+        self.convs = [GATConv(num_features, hidden_size),
+                      GATConv(hidden_size, hidden_size)]
+        self.linear = nn.Linear(hidden_size, target_size)
 
 
-    def forward(self, edge_features):
-        x = F.relu(self.conv1(edge_features, self.edge_index))
-        x = self.conv2(x, self.edge_index)
-        return x.squeeze()
+    def forward(self, x):
+        # x = F.relu(self.conv1(edge_features, self.edge_index))
+        # x = self.conv2(x, self.edge_index)
+        # # x = self.dropout(x)
+        # x = self.linear(x)
+        # return x.squeeze()
+        for conv in self.convs[:-1]:
+            x = conv(x, self.edge_index)
+            x = F.relu(x)
+            x = F.dropout(x, training=self.training)
+        x = self.convs[-1](x, self.edge_index)
+        x = self.linear(x)
+        return F.relu(x)
 
 
 class EdgeGNN(nn.Module):

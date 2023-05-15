@@ -129,16 +129,13 @@ class GurobiSolver:
         return routes
 
     def get_actual_objective(self):
-        return sum(self.x[edge].x * edge.cost
-                   for edge in self.vrp.edges)
+        return sum(self.x[edge].x * edge.cost for edge in self.vrp.edges)
 
     def get_spo_objective(self):
-        return sum(self.x[edge].x * (edge.cost - 2 * edge.predicted_cost)
-                   for edge in self.vrp.edges)
+        return sum(self.x[edge].x * (2 * edge.predicted_cost - edge.cost) for edge in self.vrp.edges)
 
     def get_pred_objective(self):
-        return sum(self.x[edge].x * edge.predicted_cost
-                   for edge in self.vrp.edges)
+        return sum(self.x[edge].x * edge.predicted_cost for edge in self.vrp.edges)
 
     def add_decision_variables(self) -> None:
         """
