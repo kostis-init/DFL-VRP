@@ -4,12 +4,15 @@ matplotlib>=3.7.1
 networkx>=3.1
 gurobipy>=10.0
 # tensorflow>=2.11; sys_platform == "linux" or sys_platform == "win32"
-# tensorflow for macos, tensorflow-deps must be installed first
+## tensorflow for macos, tensorflow-deps must be installed first
 # tensorflow-macos>=2.12; sys_platform == "darwin"
 # tensorflow-metal>=0.8.0; sys_platform == "darwin"
 protobuf>=4.22.3
 torch>=2.0
 torchmetrics>=0.11.4
-alns==5.1.0
+alns>=5.1.0
 tqdm>=4.62.3
 torch_geometric>=2.3.1
+jupyterlab>=3.1.14
+notebook>=6.4.4
+chardet>=4.0.0
