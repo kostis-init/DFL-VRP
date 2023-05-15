@@ -43,7 +43,7 @@ class HeuristicSolver:
         # The RouletteWheel selection operator is used to select the next operator to apply.
         self.select = RouletteWheel([25, 5, 1, 0], 0.8, 1, 1)
         # The RecordToRecordTravel acceptance operator is used to accept solutions.
-        self.accept = RecordToRecordTravel.autofit(self.state.objective(), 0.02, 0, num_iterations)
+        self.accept = RecordToRecordTravel.autofit(max(0.0, self.state.objective()), 0.02, 0, num_iterations)
         self.stop = MaxRuntime(time_limit)
 
     def solve(self):

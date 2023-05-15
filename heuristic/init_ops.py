@@ -21,7 +21,7 @@ def init_routes_nn(solver):
                 nearest = min(unvisited, key=lambda node: vrp.cost(current_node, node))
             elif solver.mode == SolverMode.SPO:
                 nearest = min(unvisited,
-                              key=lambda node: -vrp.cost(current_node, node) + 2 * vrp.pred_cost(current_node, node))
+                              key=lambda node: 2 * vrp.pred_cost(current_node, node) - vrp.cost(current_node, node))
             elif solver.mode == SolverMode.PRED_COST:
                 nearest = min(unvisited, key=lambda node: vrp.pred_cost(current_node, node))
             elif solver.mode == SolverMode.DISTANCE:

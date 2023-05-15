@@ -25,7 +25,7 @@ def string_removal(state, rnd_state):
         customers_rest.sort(key=lambda c: destroyed.solver.vrp.cost(center, c))
     elif destroyed.solver.mode == SolverMode.SPO:
         customers_rest.sort(
-            key=lambda c: - destroyed.solver.vrp.cost(center, c) + 2 * destroyed.solver.vrp.pred_cost(center, c))
+            key=lambda c: 2 * destroyed.solver.vrp.pred_cost(center, c) - destroyed.solver.vrp.cost(center, c))
     elif destroyed.solver.mode == SolverMode.PRED_COST:
         customers_rest.sort(key=lambda c: destroyed.solver.vrp.pred_cost(center, c))
     elif destroyed.solver.mode == SolverMode.DISTANCE:
