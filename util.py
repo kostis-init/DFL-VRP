@@ -1,6 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx
+from tqdm import tqdm
+
 from domain.vrp_node import VRPNode
 from domain.vrp_edge import VRPEdge
 from domain.vrp import VRP
@@ -135,14 +137,17 @@ def euclidean_distance(x1, y1, x2, y2):
 
 
 def test(model, instances, solver_, is_two_stage=True, verbose=False):
-    model.eval()
+
     with torch.no_grad():
         accuracy = 0.0
         actual_sols_cost = 0.0
         predicted_sols_cost = 0.0
         regret = 0.0
-        for inst in instances:
-
+        if verbose:
+            loop = instances
+        else:
+            loop = tqdm(instances)
+        for inst in loop:
             actual_obj = inst.actual_obj
             sol = inst.actual_solution
             actual_edges = [inst.edges[i] for i in range(len(sol)) if sol[i] == 1]
@@ -152,6 +157,7 @@ def test(model, instances, solver_, is_two_stage=True, verbose=False):
                 for edge in inst.edges:
                     edge.predicted_cost = model.predict(edge.features)
             else:
+                model.eval()
                 predicted_edge_costs = model(torch.tensor([edge.features for edge in inst.edges]))
                 for i, edge in enumerate(inst.edges):
                     edge.predicted_cost = predicted_edge_costs[i].detach().item()

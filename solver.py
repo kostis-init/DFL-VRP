@@ -39,7 +39,6 @@ class GurobiSolver:
             self.model.Params.TimeLimit = time_limit
 
         self.x = None
-        self.s = None
         self.u = None
 
         self.add_decision_variables()
@@ -101,9 +100,6 @@ class GurobiSolver:
         """
         return [self.x[edge].x for edge in self.x.keys()]
 
-    def get_start_times(self):
-        return {node: self.s[node].x for node in self.s.keys()}
-
     def get_loads(self):
         return {node: self.u[node].x for node in self.u.keys()}
 
@@ -142,6 +138,7 @@ class GurobiSolver:
         Adds the decision variables to the model. The decision variables are:
         - x[e] = a binary variable indicating whether edge e is used in the solution
         - u[i] = the cumulative load at node i, i.e. the total load of the route up to node i (including i)
+
         :return: None
         """
         self.x = self.model.addVars(self.vrp.edges, vtype=gp.GRB.BINARY, name='x')
@@ -154,6 +151,7 @@ class GurobiSolver:
         2. Each customer must be visited exactly once.
         3. The load at the depot must be 0.
         4. Sub-tour elimination (Miller-Tucker-Zemlin).
+
         :return: None
         """
         vrp = self.vrp

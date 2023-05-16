@@ -6,7 +6,7 @@ from heuristic.heuristic_solver import HeuristicSolver
 from solver import GurobiSolver
 from util import euclidean_distance, parse_datafile
 
-NUM_INSTANCES, NUM_NODES, NUM_FEATURES, DEGREE, NOISE_WIDTH = 10000, 20, 4, 4, 0.1
+NUM_INSTANCES, NUM_NODES, NUM_FEATURES, DEGREE, NOISE_WIDTH = 1000, 50, 4, 4, 0.1
 
 MIN_COORD, MAX_COORD = -2, 2
 MIN_DEMAND, MAX_DEMAND = 0, 10
@@ -95,8 +95,8 @@ def main():
         generate_metadata(metadata_file)
 
         vrp = parse_datafile(instance_dir)
-        generate_solution(solution_file, GurobiSolver(vrp, time_limit=1))
-        generate_solution(heuristic_solution_file, HeuristicSolver(vrp, time_limit=1))
+        # generate_solution(solution_file, GurobiSolver(vrp, time_limit=1))
+        generate_solution(solution_file, HeuristicSolver(vrp, time_limit=1))
 
 
 if __name__ == '__main__':
