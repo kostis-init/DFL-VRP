@@ -5,6 +5,7 @@ from tqdm import tqdm
 
 from enums import SolverMode
 from util import test
+import torch.nn.functional as F
 
 
 class SPOplusFunction(torch.autograd.Function):
@@ -44,10 +45,10 @@ class CostPredictor(torch.nn.Module):
     def __init__(self, input_size, output_size):
         super().__init__()
         self.fc1 = nn.Linear(input_size, output_size)
-        # self.fc2 = nn.Linear(128, output_size)
 
     def forward(self, x):
         x = x.view(-1)
+        x = F.dropout(x, p=0.5, training=self.training)
         x = self.fc1(x)
         # x = torch.relu(self.fc1(x))
         # x = self.fc2(x)

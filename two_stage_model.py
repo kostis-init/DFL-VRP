@@ -39,7 +39,7 @@ class EdgeCostPredictor(nn.Module):
 
 
 class TwoStageModel:
-    def __init__(self, train_set, val_set, test_set, lr=1e-3, patience=5):
+    def __init__(self, train_set, val_set, test_set, lr=1e-3, patience=3):
         self.train_dataloader = DataLoader(VRPDataset(train_set), batch_size=32, shuffle=True)
         self.val_dataloader = DataLoader(VRPDataset(val_set), batch_size=32, shuffle=True)
         self.test_dataloader = DataLoader(VRPDataset(test_set), batch_size=32, shuffle=True)
