@@ -9,6 +9,7 @@ from domain.vrp import VRP
 from dataclasses import fields
 
 from enums import SolverMode
+from heuristic.heuristic_solver import HeuristicSolver
 from solver import GurobiSolver
 import math
 import numpy as np
@@ -184,7 +185,7 @@ def test_and_draw(trainer, vrp):
     print(f'Testing example instance {vrp}, '
           f'predicted cost: {trainer.predict([vrp.edges[0].features])}, '
           f'actual cost: {vrp.edges[0].cost}')
-    solver = GurobiSolver(vrp)
+    solver = HeuristicSolver(vrp, time_limit=1)
     solver.solve()
     print('Drawing actual solution')
     draw_solution(solver)
@@ -192,7 +193,7 @@ def test_and_draw(trainer, vrp):
     for edge in vrp.edges:
         edge.predicted_cost = trainer.predict([edge.features])
 
-    solver = GurobiSolver(vrp, mode=SolverMode.PRED_COST)
+    solver = HeuristicSolver(vrp, mode=SolverMode.PRED_COST, time_limit=1)
     solver.solve()
     print('Drawing predicted solution')
     draw_solution(solver)

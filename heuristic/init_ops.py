@@ -15,19 +15,28 @@ def init_routes_nn(solver):
         # set the current node to the depot
         current_node = vrp.depot
         # while the route has not met the vehicle capacity limit and there are unvisited nodes
-        while sum(node.demand for node in route) < vrp.capacity and unvisited:
+        while unvisited:
             # find the nearest unvisited node depending on the mode
             if solver.mode == SolverMode.TRUE_COST:
                 nearest = min(unvisited, key=lambda node: vrp.cost(current_node, node))
+                if vrp.cost(current_node, nearest) >= 1e20:
+                    break
             elif solver.mode == SolverMode.SPO:
                 nearest = min(unvisited,
                               key=lambda node: 2 * vrp.pred_cost(current_node, node) - vrp.cost(current_node, node))
+                if 2 * vrp.pred_cost(current_node, nearest) - vrp.cost(current_node, nearest) >= 1e20:
+                    break
             elif solver.mode == SolverMode.PRED_COST:
                 nearest = min(unvisited, key=lambda node: vrp.pred_cost(current_node, node))
+                if vrp.pred_cost(current_node, nearest) >= 1e20:
+                    break
             elif solver.mode == SolverMode.DISTANCE:
                 nearest = min(unvisited, key=lambda node: vrp.distance(current_node, node))
+                if vrp.distance(current_node, nearest) >= 1e20:
+                    break
             else:
                 raise ValueError(f"Unknown solver mode {solver.mode}.")
+
             if sum(node.demand for node in route) + nearest.demand > vrp.capacity:
                 break
             # add the nearest node to the route

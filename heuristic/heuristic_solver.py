@@ -22,7 +22,7 @@ class HeuristicSolver:
                  vrp: VRP,
                  mode: SolverMode = SolverMode.TRUE_COST,
                  seed: int = 1234,
-                 time_limit: float = 0.1,
+                 time_limit: float = 0.2,
                  num_iterations: int = 10000):
         """
         Initialize the heuristic solver. The solver uses the ALNS framework to solve the VRP instance.

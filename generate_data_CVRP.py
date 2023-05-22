@@ -6,7 +6,7 @@ from heuristic.heuristic_solver import HeuristicSolver
 from solver import GurobiSolver
 from util import euclidean_distance, parse_datafile
 
-NUM_INSTANCES, NUM_NODES, NUM_FEATURES, DEGREE, NOISE_WIDTH = 1000, 50, 4, 4, 0.1
+NUM_INSTANCES, NUM_NODES, NUM_FEATURES, DEGREE, NOISE_WIDTH = 10000, 100, 4, 4, 0.1
 
 MIN_COORD, MAX_COORD = -2, 2
 MIN_DEMAND, MAX_DEMAND = 0, 10
@@ -31,9 +31,13 @@ def generate_nodes(file):
 def generate_edges(nodes, file):
     edges = []
     for j in range(NUM_NODES):
+        node_edges = []
+        return_edge = None
         for k in range(NUM_NODES):
+
             if j == k:
                 continue
+
             n1, n2 = nodes.iloc[j], nodes.iloc[k]
 
             distance = euclidean_distance(n1["xcord"], n1["ycord"], n2["xcord"], n2["ycord"])
@@ -50,7 +54,17 @@ def generate_edges(nodes, file):
             edge = [j, k, distance]
             edge.extend(features)
             edge.append(cost)
-            edges.append(edge)
+            if k == 0:
+                return_edge = edge
+            else:
+                node_edges.append(edge)
+
+        if j != 0:
+            # keep only the closest 20% of the edges
+            node_edges = sorted(node_edges, key=lambda x: x[-1])[:NUM_NODES//5]
+            node_edges.append(return_edge)
+        edges.extend(node_edges)
+
     pd.DataFrame(edges,
                  columns=["node1", "node2", "distance"] + [f"f{i}" for i in range(NUM_FEATURES)] + ["cost"]).to_csv(
         file, index=False)

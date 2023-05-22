@@ -44,15 +44,23 @@ class VRP:
                                                                                                         self.depot)
 
     def distance(self, node1: VRPNode, node2: VRPNode):
-        return self.find_edge_from_nodes[(node1, node2)].distance
+        if (node1, node2) in self.find_edge_from_nodes:
+            return self.find_edge_from_nodes[(node1, node2)].distance
+        return 1e20
 
     def cost(self, node1: VRPNode, node2: VRPNode):
-        return self.find_edge_from_nodes[(node1, node2)].cost
+        if (node1, node2) in self.find_edge_from_nodes:
+            return self.find_edge_from_nodes[(node1, node2)].cost
+        return 1e20
 
     def pred_cost(self, node1: VRPNode, node2: VRPNode):
+        if (node1, node2) not in self.find_edge_from_nodes:
+            return 1e20
         return self.find_edge_from_nodes[(node1, node2)].predicted_cost
 
     def spo_cost(self, node1: VRPNode, node2: VRPNode):
+        if (node1, node2) not in self.find_edge_from_nodes:
+            return 1e20
         return 2 * self.find_edge_from_nodes[(node1, node2)].predicted_cost - self.find_edge_from_nodes[
             (node1, node2)].cost
 
