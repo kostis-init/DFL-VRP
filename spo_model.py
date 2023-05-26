@@ -48,7 +48,7 @@ class CostPredictor(torch.nn.Module):
 
     def forward(self, x):
         x = x.view(-1)
-        x = F.dropout(x, p=0.5, training=self.training)
+        x = F.dropout(x, p=0.6, training=self.training)
         x = self.fc1(x)
         # x = torch.relu(self.fc1(x))
         # x = self.fc2(x)

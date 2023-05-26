@@ -14,13 +14,13 @@ class GurobiSolver:
                  vrp: VRP = None,
                  mip_gap: float = None,
                  verbose: int = 0,
-                 time_limit: float = None,
+                 time_limit: float = 1,
                  mode: SolverMode = SolverMode.TRUE_COST):
         """
         Initializes the Gurobi solver.
         :param vrp: The VRP instance.
         :param mip_gap: The MIP gap for the solver. This is the difference between the best integer solution found and
-        the best possible integer solution. The default value is 0.0.
+        the best possible integer solution.
         :param verbose: The verbosity of the solver. The default value is 0. If set to 1, the solver will print
         information about the progress of the optimization.
         :param time_limit: The time limit for the solver in seconds. The default value is 0, which means that the
@@ -167,4 +167,4 @@ class GurobiSolver:
         # 4.
         self.model.addConstrs(
             self.u[j] - self.u[i] >= j.demand - vrp.capacity * (1 - self.x[vrp.find_edge_from_nodes[(i, j)]])
-            for i in vrp.nodes for j in vrp.customers if i != j)
+            for i in vrp.nodes for j in vrp.customers if i != j and (i, j) in vrp.find_edge_from_nodes)

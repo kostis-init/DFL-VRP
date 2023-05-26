@@ -2,18 +2,24 @@ import pandas as pd
 import numpy as np
 import os
 from tqdm import tqdm
+
+from enums import SolverMode
 from heuristic.heuristic_solver import HeuristicSolver
 from solver import GurobiSolver
 from util import euclidean_distance, parse_datafile
 
-NUM_INSTANCES, NUM_NODES, NUM_FEATURES, DEGREE, NOISE_WIDTH = 10000, 100, 4, 4, 0.1
-
+NUM_INSTANCES = 5000
+NUM_NODES = 500
+NUM_EDGES = 10
+NUM_FEATURES = 4
+DEGREE = 4
+NOISE_WIDTH = 0.1
 MIN_COORD, MAX_COORD = -2, 2
 MIN_DEMAND, MAX_DEMAND = 0, 10
 MIN_CAPACITY, MAX_CAPACITY = MAX_DEMAND, MAX_DEMAND * NUM_NODES / 2
 FEAT_COEFF = np.random.binomial(1, 0.5, (NUM_NODES * NUM_NODES, NUM_FEATURES)) \
              * np.random.uniform(MIN_COORD, MAX_COORD, (NUM_NODES * NUM_NODES, NUM_FEATURES))
-OUTPUT_PATH = f'./data/cvrp_{NUM_INSTANCES}_{NUM_NODES}_{NUM_FEATURES}_{DEGREE}_{NOISE_WIDTH}/'
+OUTPUT_PATH = f'./data/reduced/cvrp_{NUM_INSTANCES}_{NUM_NODES}_{NUM_EDGES}/'
 
 
 def generate_nodes(file):
@@ -60,8 +66,7 @@ def generate_edges(nodes, file):
                 node_edges.append(edge)
 
         if j != 0:
-            # keep only the closest 20% of the edges
-            node_edges = sorted(node_edges, key=lambda x: x[-1])[:NUM_NODES//5]
+            node_edges = sorted(node_edges, key=lambda x: x[-1])[:NUM_EDGES]
             node_edges.append(return_edge)
         edges.extend(node_edges)
 
@@ -109,8 +114,8 @@ def main():
         generate_metadata(metadata_file)
 
         vrp = parse_datafile(instance_dir)
-        # generate_solution(solution_file, GurobiSolver(vrp, time_limit=1))
-        generate_solution(solution_file, HeuristicSolver(vrp, time_limit=1))
+        generate_solution(solution_file, GurobiSolver(vrp, mip_gap=0.2, time_limit=1))
+        # generate_solution(heuristic_solution_file, HeuristicSolver(vrp, time_limit=1))
 
 
 if __name__ == '__main__':

@@ -22,7 +22,7 @@ class HeuristicSolver:
                  vrp: VRP,
                  mode: SolverMode = SolverMode.TRUE_COST,
                  seed: int = 1234,
-                 time_limit: float = 0.2,
+                 time_limit: float = 0.4,
                  num_iterations: int = 10000):
         """
         Initialize the heuristic solver. The solver uses the ALNS framework to solve the VRP instance.
@@ -97,6 +97,9 @@ class CvrpState(State):
     def pred_cost(self):
         return sum(self.solver.vrp.route_pred_cost(route) for route in self.routes)
 
+    def distance(self):
+        return sum(self.solver.vrp.route_distance(route) for route in self.routes)
+
     def objective(self) -> float:
         """
         Computes the total route costs.
@@ -108,8 +111,8 @@ class CvrpState(State):
             return self.spo_objective()
         elif mode == SolverMode.PRED_COST:
             return self.pred_cost()
-        else:
-            raise ValueError(f"Invalid solver mode {mode}.")
+        elif mode == SolverMode.DISTANCE:
+            return self.distance()
 
     def find_route(self, node: VRPNode):
         """
