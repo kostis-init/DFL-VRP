@@ -12,9 +12,9 @@ class GurobiSolver:
 
     def __init__(self,
                  vrp: VRP = None,
-                 mip_gap: float = None,
+                 mip_gap: float = 0.2,
                  verbose: int = 0,
-                 time_limit: float = 1,
+                 time_limit: float = 60,
                  mode: SolverMode = SolverMode.TRUE_COST):
         """
         Initializes the Gurobi solver.
@@ -32,9 +32,9 @@ class GurobiSolver:
             raise Exception('VRP is None')
         self.vrp = vrp
         self.model = gp.Model('CVRPTW')
+        self.model.Params.OutputFlag = verbose
         if mip_gap is not None:
             self.model.Params.MIPGap = mip_gap
-        self.model.Params.OutputFlag = verbose
         if time_limit is not None:
             self.model.Params.TimeLimit = time_limit
 

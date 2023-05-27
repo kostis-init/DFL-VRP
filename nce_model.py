@@ -5,6 +5,7 @@ from tqdm import tqdm
 
 from enums import SolverMode
 from util import test
+import torch.nn.functional as F
 
 
 class NCETrueCostLoss(torch.nn.Module):
@@ -43,6 +44,7 @@ class CostPredictor(torch.nn.Module):
 
     def forward(self, x):
         x = x.view(-1)
+        x = F.dropout(x, p=0.6, training=self.training)
         x = self.fc1(x)
         return x
 
@@ -84,10 +86,11 @@ class NCEModel:
                 for i, edge in enumerate(vrp.edges):
                     edge.predicted_cost = predicted_edge_costs[i].detach().item()
 
-                # add to pool
-                solver = self.solver_class(vrp, mode=SolverMode.PRED_COST)
-                solver.solve()
-                self.criterion.pool[vrp].append(solver.get_decision_variables())
+                # add to pool with probability 0.05
+                if np.random.rand() < 0.1:
+                    solver = self.solver_class(vrp, mode=SolverMode.PRED_COST)
+                    solver.solve()
+                    self.criterion.pool[vrp].append(solver.get_decision_variables())
 
                 true_costs = torch.tensor([edge.cost for edge in vrp.edges])
                 loss = self.criterion(predicted_edge_costs, true_costs, vrp.actual_solution, vrp)
