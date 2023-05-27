@@ -19,7 +19,7 @@ MIN_DEMAND, MAX_DEMAND = 0, 10
 MIN_CAPACITY, MAX_CAPACITY = MAX_DEMAND, MAX_DEMAND * NUM_NODES / 2
 FEAT_COEFF = np.random.binomial(1, 0.5, (NUM_NODES * NUM_NODES, NUM_FEATURES)) \
              * np.random.uniform(MIN_COORD, MAX_COORD, (NUM_NODES * NUM_NODES, NUM_FEATURES))
-OUTPUT_PATH = f'./data/reduced/cvrp_{NUM_INSTANCES}_{NUM_NODES}_{NUM_EDGES}/'
+OUTPUT_PATH = f'./data/reduced/heuristic/cvrp_{NUM_INSTANCES}_{NUM_NODES}_{NUM_EDGES}/'
 
 
 def generate_nodes(file):
@@ -38,19 +38,23 @@ def generate_edges(nodes, file):
     edges = []
     for j in range(NUM_NODES):
         node_edges = []
-        return_edge = None
-        for k in range(NUM_NODES):
-
+        return_depot_generated = False
+        if j == 0:
+            return_depot_generated = True
+            loop = range(NUM_NODES)
+        else:
+            # random sample of NUM_EDGES nodes
+            loop = np.random.choice(NUM_NODES, NUM_EDGES, replace=False)
+        for k in loop:
             if j == k:
                 continue
+            if k == 0:
+                return_depot_generated = True
 
             n1, n2 = nodes.iloc[j], nodes.iloc[k]
-
             distance = euclidean_distance(n1["xcord"], n1["ycord"], n2["xcord"], n2["ycord"])
-
             # the features are sampled from a multivariate Gaussian distribution with mean 0 and standard deviation 1
             features = np.random.normal(0, 1, NUM_FEATURES)
-
             cost = (np.dot(FEAT_COEFF[j * NUM_NODES + k], features)) / np.sqrt(NUM_FEATURES) + 3
             cost **= DEGREE
             # multiplicative noise that is sampled from a uniform distribution
@@ -60,14 +64,22 @@ def generate_edges(nodes, file):
             edge = [j, k, distance]
             edge.extend(features)
             edge.append(cost)
-            if k == 0:
-                return_edge = edge
-            else:
-                node_edges.append(edge)
+            node_edges.append(edge)
 
-        if j != 0:
-            node_edges = sorted(node_edges, key=lambda x: x[-1])[:NUM_EDGES]
-            node_edges.append(return_edge)
+        if not return_depot_generated:
+            # add an edge to the depot
+            n1, n2 = nodes.iloc[j], nodes.iloc[0]
+            distance = euclidean_distance(n1["xcord"], n1["ycord"], n2["xcord"], n2["ycord"])
+            features = np.random.normal(0, 1, NUM_FEATURES)
+            cost = (np.dot(FEAT_COEFF[j * NUM_NODES], features)) / np.sqrt(NUM_FEATURES) + 3
+            cost **= DEGREE
+            noise = np.random.uniform(1 - NOISE_WIDTH, 1 + NOISE_WIDTH)
+            cost *= noise
+            edge = [j, 0, distance]
+            edge.extend(features)
+            edge.append(cost)
+            node_edges.append(edge)
+
         edges.extend(node_edges)
 
     pd.DataFrame(edges,
@@ -114,8 +126,8 @@ def main():
         generate_metadata(metadata_file)
 
         vrp = parse_datafile(instance_dir)
-        generate_solution(solution_file, GurobiSolver(vrp, mip_gap=0.2, time_limit=1))
-        # generate_solution(heuristic_solution_file, HeuristicSolver(vrp, time_limit=1))
+        # generate_solution(solution_file, GurobiSolver(vrp, mip_gap=1, time_limit=60))
+        generate_solution(solution_file, HeuristicSolver(vrp, time_limit=5))
 
 
 if __name__ == '__main__':
