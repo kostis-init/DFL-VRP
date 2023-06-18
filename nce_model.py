@@ -51,7 +51,7 @@ class CostPredictor(torch.nn.Module):
 
 class NCEModel:
 
-    def __init__(self, vrps_train, vrps_val, vrps_test, lr=1e-4, solver_class=None):
+    def __init__(self, vrps_train, vrps_val, vrps_test, lr=1e-4, solver_class=None, solve_prob=0.5):
         num_edges = len(vrps_train[0].edges)
         num_features = len(vrps_train[0].edges[0].features)
         self.cost_model = CostPredictor(num_edges * num_features, num_edges)
@@ -62,6 +62,7 @@ class NCEModel:
         self.vrps_train = vrps_train
         self.vrps_val = vrps_val
         self.vrps_test = vrps_test
+        self.solve_prob = solve_prob
 
         if solver_class is None:
             raise Exception('Solver class must be specified')
@@ -86,8 +87,8 @@ class NCEModel:
                 for i, edge in enumerate(vrp.edges):
                     edge.predicted_cost = predicted_edge_costs[i].detach().item()
 
-                # add to pool with probability 0.05
-                if np.random.rand() < 0.1:
+                # add to pool with probability
+                if np.random.rand() < self.solve_prob:
                     solver = self.solver_class(vrp, mode=SolverMode.PRED_COST)
                     solver.solve()
                     self.criterion.pool[vrp].append(solver.get_decision_variables())

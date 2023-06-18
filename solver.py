@@ -14,7 +14,7 @@ class GurobiSolver:
                  vrp: VRP = None,
                  mip_gap: float = 0.2,
                  verbose: int = 0,
-                 time_limit: float = 60,
+                 time_limit: float = 5,
                  mode: SolverMode = SolverMode.TRUE_COST):
         """
         Initializes the Gurobi solver.

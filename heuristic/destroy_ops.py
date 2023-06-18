@@ -2,9 +2,9 @@ import numpy as np
 
 from enums import SolverMode
 
-MAX_STRING_REMOVALS = 2
-MAX_STRING_SIZE = 12
-DESTRUCTION_SIZE = 0.05
+MAX_STRING_REMOVALS = 10
+MAX_STRING_SIZE = 60
+DESTRUCTION_SIZE = 0.1
 
 
 def string_removal(state, rnd_state):

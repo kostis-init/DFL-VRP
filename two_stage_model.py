@@ -27,12 +27,12 @@ class VRPDataset(Dataset):
 class EdgeCostPredictor(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
-        # self.fc = nn.Linear(input_size, output_size)
-        self.fc = nn.Sequential(
-            nn.Linear(input_size, hidden_size),
-            nn.ReLU(),
-            nn.Linear(hidden_size, output_size)
-        )
+        self.fc = nn.Linear(input_size, output_size)
+        # self.fc = nn.Sequential(
+        #     nn.Linear(input_size, hidden_size),
+        #     nn.ReLU(),
+        #     nn.Linear(hidden_size, output_size)
+        # )
 
     def forward(self, x):
         return self.fc(x)

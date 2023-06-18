@@ -45,15 +45,17 @@ class CostPredictor(torch.nn.Module):
     def __init__(self, input_size, output_size):
         super().__init__()
         self.fc1 = nn.Linear(input_size, output_size)
+        self.fc2 = nn.Linear(output_size, output_size)
+        self.dropout = nn.Dropout(p=0.9)
 
     def forward(self, x):
         x = x.view(-1)
-        x = F.dropout(x, p=0.6, training=self.training)
+        x = self.dropout(x, training=self.training)
+        # x = F.dropout(x, p=0.9, training=self.training)
         x = self.fc1(x)
-        # x = torch.relu(self.fc1(x))
+        # x = F.relu(x)
         # x = self.fc2(x)
-        # x = torch.relu(x)
-        # x = self.dropout(x)
+
         return x
 
 
@@ -62,6 +64,7 @@ class SPOModel:
     def __init__(self, vrps_train, vrps_val, vrps_test, lr=1e-4, solver_class=None):
         num_edges = len(vrps_train[0].edges)
         num_features = len(vrps_train[0].edges[0].features)
+
         self.cost_model = CostPredictor(num_edges * num_features, num_edges)
         self.optimizer = torch.optim.Adam(self.cost_model.parameters(), lr=lr)
         self.criterion = SPOplus()
@@ -94,7 +97,7 @@ class SPOModel:
                 # calculate the loss
                 solver = self.solver_class(vrp, mode=SolverMode.SPO)
                 solver.solve()
-                loss = self.criterion(predicted_edge_costs, vrp.actual_solution, vrp.actual_obj,
+                loss = self.criterion(predicted_edge_costs.squeeze(), vrp.actual_solution, vrp.actual_obj,
                                       solver.get_decision_variables(), solver.get_spo_objective())
                 # backpropagation
                 loss.backward()
@@ -117,7 +120,7 @@ class SPOModel:
                     edge.predicted_cost = predicted_edge_costs[i].detach().item()
                 solver = self.solver_class(vrp, mode=SolverMode.SPO)
                 solver.solve()
-                loss += self.criterion(predicted_edge_costs, vrp.actual_solution, vrp.actual_obj,
+                loss += self.criterion(predicted_edge_costs.squeeze(), vrp.actual_solution, vrp.actual_obj,
                                        solver.get_decision_variables(), solver.get_spo_objective())
             return loss / len(self.vrps_val)
 

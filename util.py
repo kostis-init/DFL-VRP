@@ -1,3 +1,5 @@
+import time
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -53,7 +55,6 @@ def parse_datafile(instance_dir: str) -> VRP:
             # convert node ids to node objects
             routes = [[next(node for node in nodes if node.id == node_id) for node_id in route] for route in routes]
             objective = float(f.readline())
-
 
     return VRP(instance_dir, nodes, edges, nodes[0], capacity, routes, None, objective)
 
@@ -138,7 +139,6 @@ def euclidean_distance(x1, y1, x2, y2):
 
 
 def test(model, instances, solver_, is_two_stage=True, verbose=False):
-
     with torch.no_grad():
         accuracy = 0.0
         actual_sols_cost = 0.0
@@ -173,11 +173,13 @@ def test(model, instances, solver_, is_two_stage=True, verbose=False):
             correct_edges = set(actual_edges).intersection(predicted_edges)
             accuracy += float(len(correct_edges)) / len(predicted_edges)
             if verbose:
-                print(f'Parsed instance {inst}, accuracy: {accuracy}, actual cost: {actual_sols_cost}, predicted cost: {predicted_sols_cost}')
+                print(
+                    f'Parsed instance {inst}, accuracy: {accuracy}, actual cost: {actual_sols_cost}, predicted cost: {predicted_sols_cost}')
         regret /= len(instances)
         accuracy /= len(instances)
         cost_comparison = predicted_sols_cost / actual_sols_cost
         print(f'Accuracy: {accuracy}, cost comparison: {cost_comparison}, regret: {regret}')
+        return accuracy, cost_comparison, regret
 
 
 def test_and_draw(trainer, vrp):
@@ -185,7 +187,7 @@ def test_and_draw(trainer, vrp):
     print(f'Testing example instance {vrp}, '
           f'predicted cost: {trainer.predict([vrp.edges[0].features])}, '
           f'actual cost: {vrp.edges[0].cost}')
-    solver = HeuristicSolver(vrp, time_limit=1)
+    solver = GurobiSolver(vrp)
     solver.solve()
     print('Drawing actual solution')
     draw_solution(solver)
@@ -193,7 +195,7 @@ def test_and_draw(trainer, vrp):
     for edge in vrp.edges:
         edge.predicted_cost = trainer.predict([edge.features])
 
-    solver = HeuristicSolver(vrp, mode=SolverMode.PRED_COST, time_limit=1)
+    solver = GurobiSolver(vrp, mode=SolverMode.PRED_COST)
     solver.solve()
     print('Drawing predicted solution')
     draw_solution(solver)
@@ -204,3 +206,25 @@ def test_and_draw(trainer, vrp):
     print(f'Correct edges ({len(correct_edges)}): {correct_edges}')
 
 
+def test_single(model, vrp, solver_class):
+    model.eval()
+    costs = model(torch.tensor([edge.features for edge in vrp.edges]))
+    for i, edge in enumerate(vrp.edges):
+        edge.predicted_cost = costs[i].detach().item()
+    solver = solver_class(vrp)
+    solver.solve()
+    print(f'Actual objective: {solver.get_actual_objective()}')
+    solver = solver_class(vrp, mode=SolverMode.PRED_COST)
+    solver.solve()
+    print(f'Predicted objective: {solver.get_actual_objective()}')
+
+
+def timeit(method):
+    def timed(*args, **kwargs):
+        ts = time.time()
+        result = method(*args, **kwargs)
+        te = time.time()
+        print(f'{method.__name__} took: {te - ts} sec')
+        return te - ts, result
+
+    return timed
