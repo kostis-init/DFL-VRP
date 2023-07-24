@@ -27,24 +27,32 @@ class VRPDataset(Dataset):
 class EdgeCostPredictor(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
-        self.fc = nn.Linear(input_size, output_size)
-        # self.fc = nn.Sequential(
-        #     nn.Linear(input_size, hidden_size),
-        #     nn.ReLU(),
-        #     nn.Linear(hidden_size, output_size)
-        # )
+        # self.fc = nn.Linear(input_size, output_size)
+
+        self.encoder = nn.Linear(input_size, hidden_size)
+        self.relu = nn.ReLU()
+        self.decoder = nn.Linear(hidden_size, output_size)
+        self.activation = nn.Sigmoid()
+
 
     def forward(self, x):
-        return self.fc(x)
+        # out = self.fc(x)
+        # return out
+        x = self.encoder(x)
+        x = self.relu(x)
+        x = self.decoder(x)
+        x = self.activation(x)
+        return x
+
 
 
 class TwoStageModel:
-    def __init__(self, train_set, val_set, test_set, lr=1e-3, patience=3):
+    def __init__(self, train_set, val_set, test_set, lr=1e-3, patience=3, weight_decay=0.0):
         self.train_dataloader = DataLoader(VRPDataset(train_set), batch_size=32, shuffle=True)
         self.val_dataloader = DataLoader(VRPDataset(val_set), batch_size=32, shuffle=True)
         self.test_dataloader = DataLoader(VRPDataset(test_set), batch_size=32, shuffle=True)
-        self.model = EdgeCostPredictor(len(train_set[0].edges[0].features), 32, 1)
-        self.optimizer = Adam(self.model.parameters(), lr=lr)
+        self.model = EdgeCostPredictor(len(train_set[0].edges[0].features), 8, 1)
+        self.optimizer = Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         self.loss_fn = nn.MSELoss()
         self.patience = patience
 

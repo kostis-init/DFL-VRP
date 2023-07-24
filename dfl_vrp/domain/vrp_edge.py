@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 
-from domain.vrp_node import VRPNode
+from dfl_vrp.domain.vrp_node import VRPNode
 
 
 @dataclass
 class VRPEdge:
     node1: VRPNode  # start node
     node2: VRPNode  # end node
-    distance: float  # distance between start and end node
+    # distance: float  # distance between start and end node
     features: [float]  # list of features
     cost: float  # cost of edge
 

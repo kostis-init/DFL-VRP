@@ -4,8 +4,8 @@ from dataclasses import dataclass
 @dataclass
 class VRPNode:
     id: int  # index of node
-    x: float  # x coordinate of node
-    y: float  # y coordinate of node
+    # x: float  # x coordinate of node
+    # y: float  # y coordinate of node
     demand: float  # demand of node
 
     def __str__(self):

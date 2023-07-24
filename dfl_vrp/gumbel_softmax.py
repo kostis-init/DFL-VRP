@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from heuristic.heuristic_solver import HeuristicSolver
+from dfl_vrp.heuristic.heuristic_solver import HeuristicSolver
 from util import parse_datafile
 
 

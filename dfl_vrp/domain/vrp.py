@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from domain.vrp_edge import VRPEdge
-from domain.vrp_node import VRPNode
+from dfl_vrp.domain.vrp_edge import VRPEdge
+from dfl_vrp.domain.vrp_node import VRPNode
 
 
 @dataclass

@@ -1,20 +1,15 @@
-from alns import ALNS
+from alns import ALNS, State
 from alns.accept import RecordToRecordTravel
 from alns.select import RouletteWheel
 from alns.stop import MaxRuntime
-
-from enums import SolverMode
-from heuristic.destroy_ops import string_removal
-from heuristic.init_ops import init_routes_nn
-from heuristic.repair_ops import greedy_repair
+from dfl_vrp.enums import SolverMode
+from dfl_vrp.heuristic.destroy_ops import string_removal, random_removal
+from dfl_vrp.heuristic.init_ops import init_routes_nn
+from dfl_vrp.heuristic.repair_ops import greedy_repair
 import numpy.random as rnd
-
 import copy
-
-from alns import State
-
-from domain.vrp import VRP
-from domain.vrp_node import VRPNode
+from dfl_vrp.domain.vrp import VRP
+from dfl_vrp.domain.vrp_node import VRPNode
 
 
 class HeuristicSolver:
@@ -36,12 +31,17 @@ class HeuristicSolver:
         self.mode = mode
 
         self.alns = ALNS(rnd.RandomState(seed))
+
+        num_destroy_ops = 2
         self.alns.add_destroy_operator(string_removal)
+        self.alns.add_destroy_operator(random_removal)
+
+        num_repair_ops = 1
         self.alns.add_repair_operator(greedy_repair)
 
         self.state = CvrpState(self, init_routes_nn(self), [])
         # The RouletteWheel selection operator is used to select the next operator to apply.
-        self.select = RouletteWheel([25, 5, 1, 0], 0.8, 1, 1)
+        self.select = RouletteWheel([25, 5, 1, 0], 0.8, num_destroy_ops, num_repair_ops)
         # The RecordToRecordTravel acceptance operator is used to accept solutions.
         self.accept = RecordToRecordTravel.autofit(max(0.0, self.state.objective()), 0.02, 0, num_iterations)
         self.stop = MaxRuntime(time_limit)

@@ -1,8 +1,8 @@
 import gurobipy as gp
 
-from enums import SolverMode
-from domain.vrp import VRP
-from domain.vrp_edge import VRPEdge
+from dfl_vrp.enums import SolverMode
+from dfl_vrp.domain.vrp import VRP
+from dfl_vrp.domain.vrp_edge import VRPEdge
 
 
 class GurobiSolver:
@@ -12,9 +12,10 @@ class GurobiSolver:
 
     def __init__(self,
                  vrp: VRP = None,
-                 mip_gap: float = 0.2,
+                 mip_gap: float = 0.1,
                  verbose: int = 0,
-                 time_limit: float = 5,
+                 seed: int = None,
+                 time_limit: float = 2,
                  mode: SolverMode = SolverMode.TRUE_COST):
         """
         Initializes the Gurobi solver.
@@ -37,6 +38,8 @@ class GurobiSolver:
             self.model.Params.MIPGap = mip_gap
         if time_limit is not None:
             self.model.Params.TimeLimit = time_limit
+        if seed is not None:
+            self.model.Params.Seed = seed
 
         self.x = None
         self.u = None

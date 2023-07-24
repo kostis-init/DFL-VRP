@@ -1,13 +1,10 @@
 import torch
 import torch.nn as nn
-from torch_geometric.nn import GCNConv, GATConv, global_max_pool
+from torch_geometric.nn import GCNConv, GATConv
 
 import torch.nn.functional as F
 
-from domain.vrp_edge import VRPEdge
-from domain.vrp_node import VRPNode
-from util import parse_datafile
-import numpy as np
+from dfl_vrp.domain.vrp_edge import VRPEdge
 
 
 class GNN(nn.Module):

@@ -5,16 +5,14 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from tqdm import tqdm
 
-from domain.vrp_node import VRPNode
-from domain.vrp_edge import VRPEdge
-from domain.vrp import VRP
+from dfl_vrp.domain.vrp_node import VRPNode
+from dfl_vrp.domain.vrp_edge import VRPEdge
+from dfl_vrp.domain.vrp import VRP
 from dataclasses import fields
 
-from enums import SolverMode
-from heuristic.heuristic_solver import HeuristicSolver
-from solver import GurobiSolver
-import math
-import numpy as np
+from dfl_vrp.enums import SolverMode
+from dfl_vrp.heuristic.heuristic_solver import HeuristicSolver
+from dfl_vrp.solver import GurobiSolver
 import torch
 import os
 
@@ -38,7 +36,7 @@ def parse_datafile(instance_dir: str) -> VRP:
         node1_id, node2_id = int(row[0]), int(row[1])
         node1 = next(node for node in nodes if node.id == node1_id)
         node2 = next(node for node in nodes if node.id == node2_id)
-        edge = VRPEdge(node1=node1, node2=node2, distance=row[2], features=row[3:-1].tolist(), cost=row[-1])
+        edge = VRPEdge(node1=node1, node2=node2, features=row[2:-1].tolist(), cost=row[-1])
         edges.append(edge)
 
     # Metadata
@@ -134,11 +132,7 @@ def draw_solution(solver) -> None:
     plt.show()
 
 
-def euclidean_distance(x1, y1, x2, y2):
-    return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-
-
-def test(model, instances, solver_, is_two_stage=True, verbose=False):
+def test(model, instances, is_two_stage=True, verbose=False):
     with torch.no_grad():
         accuracy = 0.0
         actual_sols_cost = 0.0
@@ -149,36 +143,36 @@ def test(model, instances, solver_, is_two_stage=True, verbose=False):
         else:
             loop = tqdm(instances)
         for inst in loop:
-            actual_obj = inst.actual_obj
-            sol = inst.actual_solution
-            actual_edges = [inst.edges[i] for i in range(len(sol)) if sol[i] == 1]
-            actual_sols_cost += actual_obj
+            actual_edges = [inst.edges[i] for i in range(len(inst.actual_solution)) if inst.actual_solution[i] > 0.5]
+            actual_sols_cost += inst.actual_obj
 
             if is_two_stage:
                 for edge in inst.edges:
                     edge.predicted_cost = model.predict(edge.features)
             else:
                 model.eval()
-                predicted_edge_costs = model(torch.tensor([edge.features for edge in inst.edges]))
+                predicted_edge_costs = model(torch.tensor([edge.features for edge in inst.edges], dtype=torch.float32))
                 for i, edge in enumerate(inst.edges):
                     edge.predicted_cost = predicted_edge_costs[i].detach().item()
 
-            solver = solver_(inst, mode=SolverMode.PRED_COST)
+            solver = HeuristicSolver(inst, mode=SolverMode.PRED_COST, time_limit=5)
+            # solver = GurobiSolver(inst, mode=SolverMode.PRED_COST, mip_gap=0, time_limit=10)
             solver.solve()
             predicted_edges = solver.get_active_arcs()
             predicted_obj = solver.get_actual_objective()
             predicted_sols_cost += predicted_obj
 
-            regret += predicted_obj - actual_obj
+            regret += predicted_obj - inst.actual_obj
             correct_edges = set(actual_edges).intersection(predicted_edges)
             accuracy += float(len(correct_edges)) / len(predicted_edges)
             if verbose:
                 print(
-                    f'Parsed instance {inst}, accuracy: {accuracy}, actual cost: {actual_sols_cost}, predicted cost: {predicted_sols_cost}')
+                    f'VRP {inst} -> Accuracy: {accuracy}, True cost: {inst.actual_obj}, predicted cost: {predicted_obj}')
         regret /= len(instances)
         accuracy /= len(instances)
+        accuracy = round(accuracy * 100, 2)
         cost_comparison = predicted_sols_cost / actual_sols_cost
-        print(f'Accuracy: {accuracy}, cost comparison: {cost_comparison}, regret: {regret}')
+        print(f'Accuracy: {accuracy}%, cost comparison: {cost_comparison}, regret: {regret}')
         return accuracy, cost_comparison, regret
 
 
@@ -206,16 +200,15 @@ def test_and_draw(trainer, vrp):
     print(f'Correct edges ({len(correct_edges)}): {correct_edges}')
 
 
-def test_single(model, vrp, solver_class):
+def test_single(model, vrp):
     model.eval()
-    costs = model(torch.tensor([edge.features for edge in vrp.edges]))
+    costs = model(torch.tensor([edge.features for edge in vrp.edges], dtype=torch.float32))
     for i, edge in enumerate(vrp.edges):
         edge.predicted_cost = costs[i].detach().item()
-    solver = solver_class(vrp)
+    solver = HeuristicSolver(vrp, mode=SolverMode.PRED_COST, time_limit=30)
+    # solver = GurobiSolver(vrp, mode=SolverMode.PRED_COST, mip_gap=0, time_limit=30)
     solver.solve()
-    print(f'Actual objective: {solver.get_actual_objective()}')
-    solver = solver_class(vrp, mode=SolverMode.PRED_COST)
-    solver.solve()
+    print(f'Actual objective: {vrp.actual_obj}')
     print(f'Predicted objective: {solver.get_actual_objective()}')
 
 
@@ -228,3 +221,12 @@ def timeit(method):
         return te - ts, result
 
     return timed
+
+
+def set_predicted_costs(edges, costs):
+    for i, edge in enumerate(edges):
+        edge.predicted_cost = costs[i].detach().item()
+
+
+def get_edge_features(edges: [VRPEdge]):
+    return torch.tensor([edge.features for edge in edges], dtype=torch.float32)

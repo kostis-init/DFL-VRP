@@ -1,4 +1,4 @@
-from enums import SolverMode
+from dfl_vrp.enums import SolverMode
 
 
 def init_routes_nn(solver):

@@ -1,10 +1,12 @@
 import numpy as np
 
-from enums import SolverMode
+from dfl_vrp.enums import SolverMode
 
-MAX_STRING_REMOVALS = 10
-MAX_STRING_SIZE = 60
-DESTRUCTION_SIZE = 0.1
+MAX_STRING_REMOVALS = 3
+MAX_STRING_SIZE = 2
+
+
+DESTRUCTION_SIZE = 0.2
 
 
 def string_removal(state, rnd_state):
@@ -80,5 +82,5 @@ def random_removal(state, rnd_state):
         route = destroyed.find_route(customer)
         route.remove(customer)
 
-    destroyed.routes = [route for route in state.routes if len(route) != 0]
+    destroyed.routes = [route for route in destroyed.routes if len(route) != 0]
     return destroyed

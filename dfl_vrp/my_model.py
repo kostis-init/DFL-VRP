@@ -1,68 +1,65 @@
 import torch
-import numpy as np
 import torch.nn as nn
 from tqdm import tqdm
 
-from enums import SolverMode
-from util import test
+from dfl_vrp.enums import SolverMode
+from dfl_vrp.util import test
 import torch.nn.functional as F
 
 
-class NCETrueCostLoss(torch.nn.Module):
+# TODO: try that without custom backward
 
-    def __init__(self, true_sols):
-        super().__init__()
-        self.pool = true_sols
-
-    def forward(self, pred_cost, true_cost, true_sol, vrp):
-        loss = 0
-        for sol in self.pool[vrp]:
-            loss += torch.dot((pred_cost - true_cost),
-                              (torch.DoubleTensor(np.array(true_sol)) - torch.DoubleTensor(sol)))
-
+class SimpleFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, pred_costs, true_sol, pred_sol):
+        loss = torch.dot(pred_costs, torch.Tensor(true_sol) - torch.FloatTensor(pred_sol))
+        ctx.save_for_backward(torch.Tensor(true_sol), torch.Tensor(pred_sol))
         return loss
 
+    @staticmethod
+    def backward(ctx, grad_output):
+        true_sol, pred_sol = ctx.saved_tensors
+        return grad_output * (true_sol - pred_sol), None, None
 
-class NCELoss(torch.nn.Module):
 
-    def __init__(self, true_sols):
+class Simple(torch.nn.Module):
+    def __init__(self):
         super().__init__()
-        self.pool = true_sols
+        self.fn = SimpleFunction()
 
-    def forward(self, pred_cost, true_cost, true_sol, vrp):
-        loss = 0
-        for sol in self.pool[vrp]:
-            loss += torch.dot(pred_cost, (torch.FloatTensor(true_sol) - torch.FloatTensor(sol)))
-
-        return loss
+    def forward(self, *args):
+        return self.fn.apply(*args)
 
 
 class CostPredictor(torch.nn.Module):
     def __init__(self, input_size, output_size):
         super().__init__()
         self.fc1 = nn.Linear(input_size, output_size)
+        self.dropout = nn.Dropout(p=0.5)
+        self.activation = nn.Softplus()
 
     def forward(self, x):
-        x = x.view(-1)
-        x = F.dropout(x, p=0.6, training=self.training)
-        x = self.fc1(x)
-        return x
+        out = x.view(-1)
+        out = self.dropout(out)
+        out = self.fc1(out)
+        out = self.activation(out)
+        return out
 
-
-class NCEModel:
+class MyModel:
 
     def __init__(self, vrps_train, vrps_val, vrps_test, lr=1e-4, solver_class=None, solve_prob=0.5):
         num_edges = len(vrps_train[0].edges)
         num_features = len(vrps_train[0].edges[0].features)
         self.cost_model = CostPredictor(num_edges * num_features, num_edges)
-        self.optimizer = torch.optim.Adam(self.cost_model.parameters(), lr=lr)
+        self.optimizer = torch.optim.Adam(self.cost_model.parameters(), lr=lr, weight_decay=1e-4)
 
-        self.criterion = NCELoss({vrp: [vrp.actual_solution] for vrp in vrps_train})
+        self.criterion = Simple()
 
         self.vrps_train = vrps_train
         self.vrps_val = vrps_val
         self.vrps_test = vrps_test
         self.solve_prob = solve_prob
+        self.pool = {vrp: [vrp.actual_solution] for vrp in vrps_train}
 
         if solver_class is None:
             raise Exception('Solver class must be specified')
@@ -80,21 +77,18 @@ class NCEModel:
                 # reset the gradients
                 self.optimizer.zero_grad()
                 # get the edge features
-                edge_features = torch.tensor([edge.features for edge in vrp.edges])
+                edge_features = torch.tensor([edge.features for edge in vrp.edges], dtype=torch.float32)
                 # predict the edge costs
                 predicted_edge_costs = self.cost_model(edge_features)
                 # set the predicted edge costs
                 for i, edge in enumerate(vrp.edges):
                     edge.predicted_cost = predicted_edge_costs[i].detach().item()
 
-                # add to pool with probability
-                if np.random.rand() < self.solve_prob:
-                    solver = self.solver_class(vrp, mode=SolverMode.PRED_COST)
-                    solver.solve()
-                    self.criterion.pool[vrp].append(solver.get_decision_variables())
+                # TODO: add probability of solving (caching)
+                solver = self.solver_class(vrp, mode=SolverMode.PRED_COST)
+                solver.solve()
 
-                true_costs = torch.tensor([edge.cost for edge in vrp.edges])
-                loss = self.criterion(predicted_edge_costs, true_costs, vrp.actual_solution, vrp)
+                loss = self.criterion(predicted_edge_costs, vrp.actual_solution, solver.get_decision_variables())
                 # backpropagation
                 loss.backward()
                 self.optimizer.step()
@@ -105,4 +99,4 @@ class NCEModel:
             print(
                 f'Epoch {epoch + 1} / {epochs} done, mean loss: {mean_loss}')
             if (epoch + 1) % test_every == 0:
-                test(self.cost_model, self.vrps_test, self.solver_class, is_two_stage=False)
+                test(self.cost_model, self.vrps_test, is_two_stage=False)
