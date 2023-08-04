@@ -13,6 +13,7 @@ class SPOplusFunction(torch.autograd.Function):
     """
     The SPO+ function as described in the paper Smart “Predict, then Optimize" https://arxiv.org/abs/1710.08005
     """
+
     @staticmethod
     def forward(ctx, pred_costs, true_decision, true_obj, spo_decision, spo_obj):
         loss = 2 * torch.dot(pred_costs, torch.Tensor(true_decision)) - true_obj - spo_obj
@@ -36,27 +37,24 @@ class SPOplus(torch.nn.Module):
 
 class SPOModel:
 
-    def __init__(self, vrps_train, vrps_val, vrps_test, lr=1e-4, solver_class=None, solve_prob=1, weight_decay=1e-4):
-        num_edges = len(vrps_train[0].edges)
-        num_features = len(vrps_train[0].edges[0].features)
-
-        # self.cost_model = CostPredictorLinear(num_edges * num_features, num_edges)
-        self.cost_model = EncoderDecoder(num_edges * num_features, 32, num_edges)
-        self.optimizer = torch.optim.Adam(self.cost_model.parameters(), lr=lr, weight_decay=weight_decay)
+    def __init__(self, vrps_train, vrps_val, vrps_test, solver_class=None, solve_prob=1, patience=4):
+        self.cost_model = None
+        self.optimizer = None
         self.criterion = SPOplus()
         self.vrps_train = vrps_train
         self.vrps_val = vrps_val
         self.vrps_test = vrps_test
         self.solve_prob = solve_prob
         self.pool = {vrp: [vrp.actual_routes] for vrp in vrps_train}
-
-        if solver_class is None:
-            raise Exception('Solver class must be specified')
         self.solver_class = solver_class
+        self.patience = patience
+
 
     def train(self, epochs=20, verbose=False, test_every=5):
-        self.cost_model.train()
+        best_loss = float('inf')
+        early_stop_counter = 0
         for epoch in range(epochs):
+            self.cost_model.train()
             total_loss = 0
             if verbose:
                 loop = enumerate(self.vrps_train)
@@ -74,8 +72,20 @@ class SPOModel:
                 self.optimizer.step()
                 if verbose:
                     print(f'Epoch {epoch + 1}/{epochs}, instance {idx + 1}/{len(self.vrps_train)}, loss: {loss.item()}')
+            val_loss = self.validation_loss()
             print(f'Epoch {epoch + 1} / {epochs} done, mean loss: {total_loss / len(self.vrps_train)},'
-                  f' validation loss: {self.validation_loss()}')
+                  f' validation loss: {val_loss}')
+
+            # Early stopping
+            if val_loss < best_loss:
+                best_loss = val_loss
+                early_stop_counter = 0
+            else:
+                early_stop_counter += 1
+                if early_stop_counter >= self.patience:
+                    print(f"Early stopping at epoch {epoch}")
+                    break
+
             if (epoch + 1) % test_every == 0:
                 test(self.cost_model, self.vrps_test, is_two_stage=False)
 
@@ -108,3 +118,24 @@ class SPOModel:
                 loss += self.criterion(predicted_edge_costs.squeeze(), vrp.actual_solution, vrp.actual_obj,
                                        solver.get_decision_variables(), solver.get_spo_objective()).item()
             return loss / len(self.vrps_val)
+
+
+class SPOModelLinear(SPOModel):
+
+    def __init__(self, vrps_train, vrps_val, vrps_test, solver_class, lr=1e-4, solve_prob=1, weight_decay=1e-4):
+        super().__init__(vrps_train, vrps_val, vrps_test, solver_class, solve_prob)
+        num_edges = len(vrps_train[0].edges)
+        num_features = len(vrps_train[0].edges[0].features)
+        self.cost_model = CostPredictorLinear(num_edges * num_features, num_edges)
+        self.optimizer = torch.optim.Adam(self.cost_model.parameters(), lr=lr, weight_decay=weight_decay)
+
+
+class SPOModelEncoderDecoder(SPOModel):
+
+    def __init__(self, vrps_train, vrps_val, vrps_test, solver_class, lr=1e-4, solve_prob=1, weight_decay=1e-4,
+                 hidden_size=256):
+        super().__init__(vrps_train, vrps_val, vrps_test, solver_class, solve_prob)
+        num_edges = len(vrps_train[0].edges)
+        num_features = len(vrps_train[0].edges[0].features)
+        self.cost_model = EncoderDecoder(num_edges * num_features, hidden_size, num_edges)
+        self.optimizer = torch.optim.Adam(self.cost_model.parameters(), lr=lr, weight_decay=weight_decay)

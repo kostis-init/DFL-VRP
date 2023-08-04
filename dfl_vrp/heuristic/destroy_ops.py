@@ -84,3 +84,42 @@ def random_removal(state, rnd_state):
 
     destroyed.routes = [route for route in destroyed.routes if len(route) != 0]
     return destroyed
+
+
+
+def worst_removal(state, rnd_state):
+    """
+    Removes the customer whose removal results in the best cost reduction.
+    """
+    destroyed = state.copy()
+    customers_to_remove = int(DESTRUCTION_SIZE * len(state.solver.vrp.customers))
+
+    for _ in range(customers_to_remove):
+        worst_cost, worst_customer, worst_route, worst_index = None, None, None, None
+
+        for route in destroyed.routes:
+            for customer in route:
+                customer_index = route.index(customer)
+                route.remove(customer)
+                if len(route) > 0:  # Check if the route is not empty
+                    if state.solver.mode == SolverMode.TRUE_COST:
+                        cost = state.solver.vrp.route_cost(route)
+                    elif state.solver.mode == SolverMode.SPO:
+                        cost = state.solver.vrp.route_spo_cost(route)
+                    elif state.solver.mode == SolverMode.PRED_COST:
+                        cost = state.solver.vrp.route_pred_cost(route)
+                    elif state.solver.mode == SolverMode.DISTANCE:
+                        cost = state.solver.vrp.route_distance(route)
+                    else:
+                        raise ValueError(f"Unknown solver mode {state.solver.mode}.")
+                    if worst_cost is None or cost < worst_cost:
+                        worst_cost, worst_customer, worst_route, worst_index = cost, customer, route, customer_index
+                route.insert(customer_index, customer)
+
+        if worst_customer is not None:
+            worst_route.remove(worst_customer)
+            destroyed.unassigned.append(worst_customer)
+
+    destroyed.routes = [route for route in destroyed.routes if len(route) != 0]
+    return destroyed
+

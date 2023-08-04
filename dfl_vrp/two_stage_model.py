@@ -25,25 +25,24 @@ class VRPDataset(Dataset):
 
 
 class EdgeCostPredictor(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(self, input_size, output_size):
         super().__init__()
-        # self.fc = nn.Linear(input_size, output_size)
+        self.fc = nn.Linear(input_size, output_size)
 
-        self.encoder = nn.Linear(input_size, hidden_size)
-        self.relu = nn.ReLU()
-        self.decoder = nn.Linear(hidden_size, output_size)
+        # self.encoder = nn.Linear(input_size, hidden_size)
+        # self.relu = nn.ReLU()
+        # self.decoder = nn.Linear(hidden_size, output_size)
         self.activation = nn.Sigmoid()
 
-
     def forward(self, x):
-        # out = self.fc(x)
-        # return out
-        x = self.encoder(x)
-        x = self.relu(x)
-        x = self.decoder(x)
-        x = self.activation(x)
-        return x
-
+        out = self.fc(x)
+        out = self.activation(out)
+        return out
+        # x = self.encoder(x)
+        # x = self.relu(x)
+        # x = self.decoder(x)
+        # x = self.activation(x)
+        # return x
 
 
 class TwoStageModel:
@@ -51,7 +50,7 @@ class TwoStageModel:
         self.train_dataloader = DataLoader(VRPDataset(train_set), batch_size=32, shuffle=True)
         self.val_dataloader = DataLoader(VRPDataset(val_set), batch_size=32, shuffle=True)
         self.test_dataloader = DataLoader(VRPDataset(test_set), batch_size=32, shuffle=True)
-        self.model = EdgeCostPredictor(len(train_set[0].edges[0].features), 8, 1)
+        self.model = EdgeCostPredictor(len(train_set[0].edges[0].features), 1)
         self.optimizer = Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         self.loss_fn = nn.MSELoss()
         self.patience = patience
@@ -98,6 +97,7 @@ class TwoStageModel:
                 if early_stop_counter >= self.patience:
                     print(f"Early stopping at epoch {epoch}")
                     break
+        self.test()
 
     def test(self):
         self.model.eval()
@@ -108,13 +108,8 @@ class TwoStageModel:
         test_loss /= len(self.test_dataloader)
         print(f"Test Loss: {test_loss}")
 
-    def predict(self, features):
-        """
-        Predict the cost of an edge given its features
-        :param features: list of features
-        :return: predicted cost
-        """
+    def predict(self, edges):
         self.model.eval()
         with torch.no_grad():
-            return self.model(torch.tensor(features, dtype=torch.float32)).item()
-
+            for edge in edges:
+                edge.predicted_cost = self.model(torch.tensor(edge.features, dtype=torch.float32)).item()

@@ -3,9 +3,9 @@ from alns.accept import RecordToRecordTravel
 from alns.select import RouletteWheel
 from alns.stop import MaxRuntime
 from dfl_vrp.enums import SolverMode
-from dfl_vrp.heuristic.destroy_ops import string_removal, random_removal
+from dfl_vrp.heuristic.destroy_ops import string_removal, random_removal, worst_removal
 from dfl_vrp.heuristic.init_ops import init_routes_nn
-from dfl_vrp.heuristic.repair_ops import greedy_repair
+from dfl_vrp.heuristic.repair_ops import greedy_repair, regret_insertion
 import numpy.random as rnd
 import copy
 from dfl_vrp.domain.vrp import VRP
@@ -17,8 +17,9 @@ class HeuristicSolver:
                  vrp: VRP,
                  mode: SolverMode = SolverMode.TRUE_COST,
                  seed: int = 1234,
-                 time_limit: float = 1,
-                 num_iterations: int = 10000):
+                 time_limit: float = 0.2,
+                 num_iterations: int = 10000,
+                 flag=1):
         """
         Initialize the heuristic solver. The solver uses the ALNS framework to solve the VRP instance.
         :param vrp: The VRP instance.
@@ -32,16 +33,18 @@ class HeuristicSolver:
 
         self.alns = ALNS(rnd.RandomState(seed))
 
+        num_repair_ops = 2
+        self.alns.add_repair_operator(greedy_repair)
+        self.alns.add_repair_operator(regret_insertion)
         num_destroy_ops = 2
+        # self.alns.add_destroy_operator(worst_removal)
         self.alns.add_destroy_operator(string_removal)
         self.alns.add_destroy_operator(random_removal)
 
-        num_repair_ops = 1
-        self.alns.add_repair_operator(greedy_repair)
 
         self.state = CvrpState(self, init_routes_nn(self), [])
         # The RouletteWheel selection operator is used to select the next operator to apply.
-        self.select = RouletteWheel([25, 5, 1, 0], 0.8, num_destroy_ops, num_repair_ops)
+        self.select = RouletteWheel([25, 5, 1, 0], 0.6, num_destroy_ops, num_repair_ops)
         # The RecordToRecordTravel acceptance operator is used to accept solutions.
         self.accept = RecordToRecordTravel.autofit(max(0.0, self.state.objective()), 0.02, 0, num_iterations)
         self.stop = MaxRuntime(time_limit)

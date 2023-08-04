@@ -12,10 +12,10 @@ class GurobiSolver:
 
     def __init__(self,
                  vrp: VRP = None,
-                 mip_gap: float = 0.1,
+                 mip_gap: float = 0,
                  verbose: int = 0,
                  seed: int = None,
-                 time_limit: float = 2,
+                 time_limit: float = 1,
                  mode: SolverMode = SolverMode.TRUE_COST):
         """
         Initializes the Gurobi solver.

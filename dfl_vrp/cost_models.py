@@ -27,6 +27,7 @@ class CostPredictorLinear(BaseCostModel):
 class EncoderDecoder(BaseCostModel):
     def __init__(self, input_size, hidden_size, output_size):
         super(EncoderDecoder, self).__init__()
+        self.dropout = nn.Dropout(p=0.5)
         self.encoder = nn.Linear(input_size, hidden_size)
         self.relu = nn.ReLU()
         self.decoder = nn.Linear(hidden_size, output_size)
@@ -34,6 +35,7 @@ class EncoderDecoder(BaseCostModel):
 
     def forward(self, x):
         x = x.view(-1)
+        x = self.dropout(x)
         x = self.encoder(x)
         x = self.relu(x)
         x = self.decoder(x)

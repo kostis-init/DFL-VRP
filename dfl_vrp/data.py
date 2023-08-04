@@ -8,8 +8,8 @@ from solver import GurobiSolver
 from util import parse_datafile
 from sklearn.preprocessing import MinMaxScaler
 
-NUM_INSTANCES = 1000
-NUM_NODES = 69
+NUM_INSTANCES = 999
+NUM_NODES = 10
 NUM_EDGES = NUM_NODES - 2  # Complete graph
 NUM_FEATURES = 4
 DEGREE = 6  # Locked
@@ -54,6 +54,9 @@ def generate_edges(file):
             features = np.round(features, 5)
 
             cost = (np.dot(FEAT_COEFF[j * NUM_NODES + k], features)) / np.sqrt(NUM_FEATURES) + 3
+
+            # make degree be a random number between 4, 6 and 8
+            DEGREE = np.random.choice([4, 6, 8])
             cost **= DEGREE
             # multiplicative noise that is sampled from a uniform distribution
             noise = np.random.uniform(1 - NOISE_WIDTH, 1 + NOISE_WIDTH)
@@ -135,8 +138,13 @@ def main():
         generate_metadata(metadata_file)
 
         vrp = parse_datafile(instance_dir)
-        # generate_solution(solution_file, GurobiSolver(vrp, mip_gap=0, time_limit=40))
-        generate_solution(solution_file, HeuristicSolver(vrp, time_limit=5))
+        h1_solution_file = os.path.join(instance_dir, "h1_solution.txt")
+        h2_solution_file = os.path.join(instance_dir, "h2_solution.txt")
+        h3_solution_file = os.path.join(instance_dir, "h3_solution.txt")
+        h4_solution_file = os.path.join(instance_dir, "h4_solution.txt")
+        h5_solution_file = os.path.join(instance_dir, "h5_solution.txt")
+        h6_solution_file = os.path.join(instance_dir, "h6_solution.txt")
+        generate_solution(solution_file, GurobiSolver(vrp, mip_gap=0, time_limit=2))
 
         if False:
             g1_solution_file = os.path.join(instance_dir, "g1_solution.txt")

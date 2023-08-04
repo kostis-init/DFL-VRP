@@ -18,7 +18,6 @@ import os
 
 
 def parse_datafile(instance_dir: str) -> VRP:
-    # print(f'Parsing datafile: {instance_dir}...')
     nodes_file_path = f'{instance_dir}/nodes.csv'
     edges_file_path = f'{instance_dir}/edges.csv'
     metadata_file_path = f'{instance_dir}/metadata.csv'
@@ -147,16 +146,14 @@ def test(model, instances, is_two_stage=True, verbose=False):
             actual_sols_cost += inst.actual_obj
 
             if is_two_stage:
-                for edge in inst.edges:
-                    edge.predicted_cost = model.predict(edge.features)
+                model.predict(inst.edges)
             else:
                 model.eval()
                 predicted_edge_costs = model(torch.tensor([edge.features for edge in inst.edges], dtype=torch.float32))
-                for i, edge in enumerate(inst.edges):
-                    edge.predicted_cost = predicted_edge_costs[i].detach().item()
+                set_predicted_costs(inst.edges, predicted_edge_costs)
 
-            solver = HeuristicSolver(inst, mode=SolverMode.PRED_COST, time_limit=5)
-            # solver = GurobiSolver(inst, mode=SolverMode.PRED_COST, mip_gap=0, time_limit=10)
+            solver = HeuristicSolver(inst, mode=SolverMode.PRED_COST, time_limit=3)
+            # solver = GurobiSolver(inst, mode=SolverMode.PRED_COST, mip_gap=0, time_limit=3)
             solver.solve()
             predicted_edges = solver.get_active_arcs()
             predicted_obj = solver.get_actual_objective()
@@ -176,37 +173,17 @@ def test(model, instances, is_two_stage=True, verbose=False):
         return accuracy, cost_comparison, regret
 
 
-def test_and_draw(trainer, vrp):
-    trainer.model.eval()
-    print(f'Testing example instance {vrp}, '
-          f'predicted cost: {trainer.predict([vrp.edges[0].features])}, '
-          f'actual cost: {vrp.edges[0].cost}')
-    solver = GurobiSolver(vrp)
-    solver.solve()
-    print('Drawing actual solution')
-    draw_solution(solver)
-    actual_edges = solver.get_active_arcs()
-    for edge in vrp.edges:
-        edge.predicted_cost = trainer.predict([edge.features])
+def test_single(model, vrp, is_two_stage=False):
 
-    solver = GurobiSolver(vrp, mode=SolverMode.PRED_COST)
-    solver.solve()
-    print('Drawing predicted solution')
-    draw_solution(solver)
-    predicted_edges = solver.get_active_arcs()
-    print(f'Actual edges ({len(actual_edges)}): {actual_edges}')
-    print(f'Predicted edges ({len(predicted_edges)}): {predicted_edges}')
-    correct_edges = set(actual_edges).intersection(predicted_edges)
-    print(f'Correct edges ({len(correct_edges)}): {correct_edges}')
+    if is_two_stage:
+        model.predict(vrp.edges)
+    else:
+        model.eval()
+        predicted_edge_costs = model(torch.tensor([edge.features for edge in vrp.edges], dtype=torch.float32))
+        set_predicted_costs(vrp.edges, predicted_edge_costs)
 
-
-def test_single(model, vrp):
-    model.eval()
-    costs = model(torch.tensor([edge.features for edge in vrp.edges], dtype=torch.float32))
-    for i, edge in enumerate(vrp.edges):
-        edge.predicted_cost = costs[i].detach().item()
-    solver = HeuristicSolver(vrp, mode=SolverMode.PRED_COST, time_limit=30)
-    # solver = GurobiSolver(vrp, mode=SolverMode.PRED_COST, mip_gap=0, time_limit=30)
+    solver = HeuristicSolver(vrp, mode=SolverMode.PRED_COST, time_limit=10)
+    # solver = GurobiSolver(vrp, mode=SolverMode.PRED_COST, mip_gap=0, time_limit=40)
     solver.solve()
     print(f'Actual objective: {vrp.actual_obj}')
     print(f'Predicted objective: {solver.get_actual_objective()}')
