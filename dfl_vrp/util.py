@@ -81,53 +81,61 @@ def parse_datafile(instance_dir: str) -> VRP:
 #     ax.set_ylabel("Y-coordinate")
 #     ax.legend(frameon=False, ncol=3)
 
-def draw_solution(solver) -> None:
-    vrp = solver.vrp
+import matplotlib.pyplot as plt
+import networkx as nx
+import matplotlib
+import numpy as np
+
+def draw_solution(vrp, routes, total_cost, name="CVRP solution"):
+    """
+    Plot the routes of the passed-in solution.
+    """
+    fig, ax = plt.subplots(figsize=(12, 10))
+    cmap = matplotlib.cm.rainbow(np.linspace(0, 1, len(routes)))
+
+    graph = nx.DiGraph()
+    graph.add_nodes_from(node.id for node in vrp.nodes)
+    pos = nx.random_layout(graph, seed=7)
+
+    for idx, route in enumerate(routes):
+        ax.plot(
+            [pos[loc.id][0] for loc in [vrp.depot] + [node for node in route] + [vrp.depot]],
+            [pos[loc.id][1] for loc in [vrp.depot] + [node for node in route] + [vrp.depot]],
+            color=cmap[idx],
+            marker='.'
+        )
+
+    # Plot the depot
+    kwargs = dict(label="Depot", zorder=3, marker="D", s=300)
+    ax.scatter(*pos[vrp.depot.id], c="tab:red", **kwargs)
+
+    ax.set_title(f"{name}\n Total cost: {total_cost}")
+    ax.set_xlabel("X-coordinate")
+    ax.set_ylabel("Y-coordinate")
+    ax.legend(frameon=False, ncol=3)
+    plt.xticks([])  # removes x-axis tick values
+    plt.yticks([])  # removes y-axis tick values
+    plt.xlabel('')  # removes x-axis label
+    plt.ylabel('')  # removes y-axis label
+    plt.show()
+
+
+def draw_solution1(vrp, routes) -> None:
 
     graph = nx.DiGraph()
     graph.add_nodes_from(vrp.nodes)
 
-    pos = {i: (i.x, i.y) for i in vrp.nodes}
+    # Automatic node positioning using spring layout
+    pos = nx.spring_layout(graph, seed=42)
     node_colors = ['red' if i == vrp.depot else 'black' for i in vrp.nodes]
 
     fig, ax = plt.subplots()
-    attrs = {i: {
-        'cumulative_demand': round(solver.get_loads()[i], 2),
-        'demand': round(i.demand, 2),
-    } for i in vrp.customers}
-    nx.set_node_attributes(graph, attrs)
-
-    nodes = nx.draw_networkx_nodes(G=graph, pos=pos, ax=ax, node_color=node_colors, node_size=10)
-
-    routes = solver.get_routes()
+    nx.draw_networkx_nodes(G=graph, ax=ax, node_color=node_colors, node_size=10, pos=pos)
     for i, route in enumerate(routes):
         route_edges = [(vrp.depot, route[0])] + [(route[i], route[i + 1]) for i in range(len(route) - 1)] + [
             (route[-1], vrp.depot)]
-        nx.draw_networkx_edges(G=graph, pos=pos, ax=ax, edgelist=route_edges, edge_color=f'C{i}', width=1, arrowsize=10,
-                               arrowstyle='-|>')
-
-    annot = ax.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points",
-                        bbox=dict(boxstyle="round", fc="w"), arrowprops=dict(arrowstyle="->"))
-    annot.set_visible(False)
-
-    def hover(event):
-        if event.inaxes != ax:
-            return
-        cont, ind = nodes.contains(event)
-        if cont:
-            node_obj = list(graph.nodes)[ind["ind"][0]]
-            annot.xy = pos[node_obj]
-            node_attr = {'node': node_obj}
-            node_attr.update(graph.nodes[node_obj])
-            annot.set_text('\n'.join(f'{k}: {v}' for k, v in node_attr.items()))
-            annot.set_visible(True)
-            fig.canvas.draw_idle()
-        else:
-            if annot.get_visible():
-                annot.set_visible(False)
-                fig.canvas.draw_idle()
-
-    fig.canvas.mpl_connect("motion_notify_event", hover)
+        nx.draw_networkx_edges(G=graph, ax=ax, edgelist=route_edges, edge_color=f'C{i}', width=1, arrowsize=10,
+                               arrowstyle='-|>', pos=pos)
     plt.show()
 
 
@@ -183,7 +191,7 @@ def test_single(model, vrp, is_two_stage=False):
         set_predicted_costs(vrp.edges, predicted_edge_costs)
 
     solver = HeuristicSolver(vrp, mode=SolverMode.PRED_COST, time_limit=10)
-    # solver = GurobiSolver(vrp, mode=SolverMode.PRED_COST, mip_gap=0, time_limit=40)
+    # solver = GurobiSolver(vrp, mode=SolverMode.PRED_COST, mip_gap=0, time_limit=10)
     solver.solve()
     print(f'Actual objective: {vrp.actual_obj}')
     print(f'Predicted objective: {solver.get_actual_objective()}')

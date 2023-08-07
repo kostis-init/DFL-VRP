@@ -1,5 +1,7 @@
 import random
 from datetime import datetime
+
+from dfl_vrp.two_stage_model_new import TwoStageModelNew
 from dfl_vrp.util import *
 from tqdm import tqdm
 from dfl_vrp.two_stage_model import TwoStageModel
@@ -10,18 +12,18 @@ from dfl_vrp.nce_model import NCEModelLinear, NCEModelEncoderDecoder
 # Constants
 TRAIN_PERC, VALIDATION_PERC, TEST_PERC = 0.8, 0.1, 0.1
 NUM_DATA = 1000
-DATA_PATH = '../data/capacity100/instances1000/nodes40/noise0.1/feat4'
+DATA_PATH = '../data/capacity100/instances1000/nodes80/noise0.1/feat4'
 SOLVER_CLASS = HeuristicSolver
 
 NUM_EPOCHS_2_STAGE, NUM_EPOCHS_SPO, NUM_EPOCHS_NCE = 50, 50, 50
-LR_2_STAGE, LR_SPO, LR_NCE = 5e-4, 2e-4, 2e-4
+LR_2_STAGE, LR_SPO, LR_NCE = 8e-4, 2e-4, 2e-4
 WEIGHT_DECAY = 1e-4
-SOLVE_PROB = 0.25
+SOLVE_PROB = 0.1
 
-RESULTS_PATH = f'{DATA_PATH}_{SOLVER_CLASS.__name__}_0.2sec_solveprob{SOLVE_PROB}/'
+RESULTS_PATH = f'{DATA_PATH}_NEW_{SOLVER_CLASS.__name__}_0.2sec_solveprob{SOLVE_PROB}/'
 
 two_stage_enabled, two_stage_nl_enabled, spo_enabled, spo_nl_enabled, nce_enabled, nce_nl_enabled =\
-    True, False, True, False, True, False
+    True, True, False, False, False, False
 
 
 def after_train(cost_model, time_elapsed, is_two_stage=False):
@@ -51,6 +53,18 @@ if two_stage_enabled:
 else:
     two_stage_results = None
     print('2-stage model not enabled')
+
+
+# 2-stage model
+if two_stage_enabled:
+    print('\nTraining 2-stage NEW model...')
+    model = TwoStageModelNew(vrps_train, vrps_val, vrps_test, lr=LR_2_STAGE, weight_decay=WEIGHT_DECAY)
+    train_time, _ = timeit(model.train)(num_epochs=NUM_EPOCHS_2_STAGE)
+    print('Testing 2-stage model NEW...')
+    two_stage_new_results = after_train(model, train_time, is_two_stage=True)
+else:
+    two_stage_new_results = None
+    print('2-stage model NEW not enabled')
 
 # 2-stage DL model
 if two_stage_nl_enabled:
@@ -114,6 +128,7 @@ else:
 # Save results
 results = {
     'two_stage': two_stage_results,
+    'two_stage_new': two_stage_new_results,
     'two_stage_non_linear': two_stage_non_linear_results,
     'spo': spo_results,
     'spo_nl': spo_nl_results,
