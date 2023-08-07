@@ -110,9 +110,7 @@ def draw_solution(vrp, routes, total_cost, name="CVRP solution"):
     ax.scatter(*pos[vrp.depot.id], c="tab:red", **kwargs)
 
     ax.set_title(f"{name}\n Total cost: {total_cost}")
-    ax.set_xlabel("X-coordinate")
-    ax.set_ylabel("Y-coordinate")
-    ax.legend(frameon=False, ncol=3)
+    ax.legend(frameon=False)
     plt.xticks([])  # removes x-axis tick values
     plt.yticks([])  # removes y-axis tick values
     plt.xlabel('')  # removes x-axis label
