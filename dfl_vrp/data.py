@@ -8,19 +8,16 @@ from solver import GurobiSolver
 from util import parse_datafile
 from sklearn.preprocessing import MinMaxScaler
 
-NUM_INSTANCES = 999
-NUM_NODES = 10
+NUM_INSTANCES = 1000
+NUM_NODES = 20
 NUM_EDGES = NUM_NODES - 2  # Complete graph
 NUM_FEATURES = 4
 DEGREE = 6  # Locked
-NOISE_WIDTH = 0.1
+NOISE_WIDTH = 0.2
 MIN_DEMAND, MAX_DEMAND = 1, 50
-# MIN_TIME, MAX_TIME = 0, 100
 CAPACITY = 100
-FEAT_COEFF = np.random.binomial(1, 0.5, (NUM_NODES ** 2, NUM_FEATURES)) * np.random.uniform(-2, 2, (
+FEAT_COEFF = np.random.binomial(1, 0.75, (NUM_NODES ** 2, NUM_FEATURES)) * np.random.uniform(-2, 2, (
     NUM_NODES ** 2, NUM_FEATURES))
-
-NEIGHBOUR_COST_FACTOR = 0.3  # The proportion of each neighbour's cost to add to the cost of an edge
 
 OUTPUT_PATH = f'../data/capacity{CAPACITY}/instances{NUM_INSTANCES}/nodes{NUM_NODES}/noise{NOISE_WIDTH}/feat{NUM_FEATURES}/'
 
@@ -54,9 +51,6 @@ def generate_edges(file):
             features = np.round(features, 5)
 
             cost = (np.dot(FEAT_COEFF[j * NUM_NODES + k], features)) / np.sqrt(NUM_FEATURES) + 3
-
-            # make degree be a random number between 4, 6 and 8
-            DEGREE = np.random.choice([4, 6, 8])
             cost **= DEGREE
             # multiplicative noise that is sampled from a uniform distribution
             noise = np.random.uniform(1 - NOISE_WIDTH, 1 + NOISE_WIDTH)
@@ -82,17 +76,6 @@ def generate_edges(file):
         edge.append(cost)
         node_edges.append(edge)
         edges.extend(node_edges)
-
-    # after generating all edges, create a new list of edges with updated costs
-    # updated_edges = []
-    # for edge in edges:
-    #     neighbour_costs = [e[-1] for e in edges if (e[0] == edge[0] or e[1] == edge[0]) and e != edge]
-    #     # keep the largest 4 of neighbour costs
-    #     neighbour_costs = sorted(neighbour_costs, reverse=True)[:4]
-    #     updated_cost = edge[-1] + NEIGHBOUR_COST_FACTOR * sum(neighbour_costs)
-    #     updated_edge = edge[:-1] + [updated_cost]
-    #     updated_edges.append(updated_edge)
-    # edges = updated_edges
 
     # scale the costs to be between 0 and 1
     costs = np.array([edge[-1] for edge in edges]).reshape(-1, 1)
@@ -138,13 +121,7 @@ def main():
         generate_metadata(metadata_file)
 
         vrp = parse_datafile(instance_dir)
-        h1_solution_file = os.path.join(instance_dir, "h1_solution.txt")
-        h2_solution_file = os.path.join(instance_dir, "h2_solution.txt")
-        h3_solution_file = os.path.join(instance_dir, "h3_solution.txt")
-        h4_solution_file = os.path.join(instance_dir, "h4_solution.txt")
-        h5_solution_file = os.path.join(instance_dir, "h5_solution.txt")
-        h6_solution_file = os.path.join(instance_dir, "h6_solution.txt")
-        generate_solution(solution_file, GurobiSolver(vrp, mip_gap=0, time_limit=2))
+        generate_solution(solution_file, GurobiSolver(vrp, time_limit=10, mip_gap=0))
 
         if False:
             g1_solution_file = os.path.join(instance_dir, "g1_solution.txt")
@@ -165,12 +142,12 @@ def main():
             h7_solution_file = os.path.join(instance_dir, "h7_solution.txt")
             h8_solution_file = os.path.join(instance_dir, "h8_solution.txt")
             h9_solution_file = os.path.join(instance_dir, "h9_solution.txt")
-            generate_solution(g1_solution_file, GurobiSolver(vrp, mip_gap=0, time_limit=10))
-            generate_solution(h1_solution_file, HeuristicSolver(vrp, time_limit=10))
-            generate_solution(g2_solution_file, GurobiSolver(vrp, mip_gap=0, time_limit=20))
-            generate_solution(h2_solution_file, HeuristicSolver(vrp, time_limit=20))
-            generate_solution(g3_solution_file, GurobiSolver(vrp, mip_gap=0, time_limit=30))
-            generate_solution(h3_solution_file, HeuristicSolver(vrp, time_limit=30))
+            # generate_solution(g1_solution_file, GurobiSolver(vrp, mip_gap=0, time_limit=1))
+            generate_solution(h1_solution_file, HeuristicSolver(vrp, time_limit=1))
+            # generate_solution(g2_solution_file, GurobiSolver(vrp, mip_gap=0, time_limit=2))
+            generate_solution(h2_solution_file, HeuristicSolver(vrp, time_limit=2))
+            generate_solution(g3_solution_file, GurobiSolver(vrp, mip_gap=0, time_limit=3))
+            generate_solution(h3_solution_file, HeuristicSolver(vrp, time_limit=3))
             generate_solution(g4_solution_file, GurobiSolver(vrp, mip_gap=0, time_limit=4))
             generate_solution(h4_solution_file, HeuristicSolver(vrp, time_limit=4))
             generate_solution(g5_solution_file, GurobiSolver(vrp, mip_gap=0, time_limit=5))

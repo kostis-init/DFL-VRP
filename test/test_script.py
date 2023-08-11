@@ -12,18 +12,18 @@ from dfl_vrp.nce_model import NCEModelLinear, NCEModelEncoderDecoder
 # Constants
 TRAIN_PERC, VALIDATION_PERC, TEST_PERC = 0.8, 0.1, 0.1
 NUM_DATA = 1000
-DATA_PATH = '../data/capacity100/instances1000/nodes80/noise0.1/feat4'
-SOLVER_CLASS = HeuristicSolver
+DATA_PATH = ('../data/capacity100/instances1000/nodes10/noise0.1/feat4')
+SOLVER_CLASS = GurobiSolver
 
 NUM_EPOCHS_2_STAGE, NUM_EPOCHS_SPO, NUM_EPOCHS_NCE = 50, 50, 50
-LR_2_STAGE, LR_SPO, LR_NCE = 8e-4, 2e-4, 2e-4
+LR_2_STAGE, LR_SPO, LR_NCE = 5e-4, 5e-4, 5e-4
 WEIGHT_DECAY = 1e-4
 SOLVE_PROB = 0.1
 
-RESULTS_PATH = f'{DATA_PATH}_NEW_{SOLVER_CLASS.__name__}_0.2sec_solveprob{SOLVE_PROB}/'
+RESULTS_PATH = (f'{DATA_PATH}_FINAL{NUM_DATA}_{SOLVER_CLASS.__name__}_0.5sec_solveprob{SOLVE_PROB}/')
 
 two_stage_enabled, two_stage_nl_enabled, spo_enabled, spo_nl_enabled, nce_enabled, nce_nl_enabled =\
-    True, True, False, False, False, False
+    True, False, True, False, True, False
 
 
 def after_train(cost_model, time_elapsed, is_two_stage=False):
@@ -44,15 +44,15 @@ vrps_train, vrps_val, vrps_test = data[:num_train], data[num_train:num_train + n
 print(f'Number of training data: {len(vrps_train)}, validation data: {len(vrps_val)}, test data: {len(vrps_test)}')
 
 # 2-stage model
-if two_stage_enabled:
-    print('\nTraining 2-stage model...')
-    model = TwoStageModel(vrps_train, vrps_val, vrps_test, lr=LR_2_STAGE, weight_decay=WEIGHT_DECAY)
-    train_time, _ = timeit(model.train)(num_epochs=NUM_EPOCHS_2_STAGE)
-    print('Testing 2-stage model...')
-    two_stage_results = after_train(model, train_time, is_two_stage=True)
-else:
-    two_stage_results = None
-    print('2-stage model not enabled')
+# if two_stage_enabled:
+#     print('\nTraining 2-stage model...')
+#     model = TwoStageModel(vrps_train, vrps_val, vrps_test, lr=LR_2_STAGE, weight_decay=WEIGHT_DECAY)
+#     train_time, _ = timeit(model.train)(num_epochs=NUM_EPOCHS_2_STAGE)
+#     print('Testing 2-stage model...')
+#     two_stage_results = after_train(model, train_time, is_two_stage=True)
+# else:
+#     two_stage_results = None
+#     print('2-stage model not enabled')
 
 
 # 2-stage model
@@ -93,7 +93,7 @@ else:
 if spo_nl_enabled:
     print('\nTraining SPO Non linear model...')
     model = SPOModelEncoderDecoder(vrps_train, vrps_val, vrps_test, SOLVER_CLASS,
-                                   lr=LR_SPO, weight_decay=WEIGHT_DECAY, solve_prob=SOLVE_PROB, hidden_size=256)
+                                   lr=LR_SPO, weight_decay=WEIGHT_DECAY, solve_prob=SOLVE_PROB, hidden_size=64)
     train_time, _ = timeit(model.train)(epochs=NUM_EPOCHS_SPO, verbose=False, test_every=1000)
     print('Testing SPO Non Linear model...')
     spo_nl_results = after_train(model.cost_model, train_time)
@@ -117,7 +117,7 @@ else:
 if nce_nl_enabled:
     print('\nTraining NCE Non linear model...')
     model = NCEModelEncoderDecoder(vrps_train, vrps_val, vrps_test, SOLVER_CLASS, lr=LR_NCE, weight_decay=WEIGHT_DECAY,
-                                   solve_prob=SOLVE_PROB, hidden_size=256)
+                                   solve_prob=SOLVE_PROB, hidden_size=64)
     train_time, _ = timeit(model.train)(epochs=NUM_EPOCHS_NCE, verbose=False, test_every=1000)
     print('Testing NCE Non linear model...')
     nce_nl_results = after_train(model.cost_model, train_time)
@@ -127,7 +127,6 @@ else:
 
 # Save results
 results = {
-    'two_stage': two_stage_results,
     'two_stage_new': two_stage_new_results,
     'two_stage_non_linear': two_stage_non_linear_results,
     'spo': spo_results,

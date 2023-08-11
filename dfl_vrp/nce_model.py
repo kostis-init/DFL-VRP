@@ -40,7 +40,7 @@ class NCELoss(torch.nn.Module):
 
 class NCEModel:
 
-    def __init__(self, vrps_train, vrps_val, vrps_test, solver_class, solve_prob=0.5, patience=4):
+    def __init__(self, vrps_train, vrps_val, vrps_test, solver_class, solve_prob=0.5, patience=2):
         self.cost_model = None
         self.optimizer = None
         all_vrps = vrps_train + vrps_val + vrps_test
@@ -90,7 +90,7 @@ class NCEModel:
                 early_stop_counter = 0
             else:
                 early_stop_counter += 1
-                if early_stop_counter >= self.patience and epoch > 6:
+                if early_stop_counter >= self.patience and epoch > 3:
                     print(f"Early stopping at epoch {epoch}")
                     break
 

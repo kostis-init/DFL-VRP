@@ -2,8 +2,8 @@ import numpy as np
 
 from dfl_vrp.enums import SolverMode
 
-MAX_STRING_REMOVALS = 3
-MAX_STRING_SIZE = 2
+MAX_STRING_REMOVALS = 4
+MAX_STRING_SIZE = 3
 
 
 DESTRUCTION_SIZE = 0.2

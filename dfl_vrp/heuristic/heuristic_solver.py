@@ -17,7 +17,7 @@ class HeuristicSolver:
                  vrp: VRP,
                  mode: SolverMode = SolverMode.TRUE_COST,
                  seed: int = 1234,
-                 time_limit: float = 0.2,
+                 time_limit: float = 0.5,
                  num_iterations: int = 10000,
                  flag=1):
         """

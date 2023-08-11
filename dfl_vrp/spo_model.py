@@ -37,7 +37,7 @@ class SPOplus(torch.nn.Module):
 
 class SPOModel:
 
-    def __init__(self, vrps_train, vrps_val, vrps_test, solver_class=None, solve_prob=1, patience=4):
+    def __init__(self, vrps_train, vrps_val, vrps_test, solver_class=None, solve_prob=1, patience=2):
         self.cost_model = None
         self.optimizer = None
         self.criterion = SPOplus()

@@ -109,6 +109,7 @@ def draw_solution(vrp, routes, total_cost, name="CVRP solution"):
     kwargs = dict(label="Depot", zorder=3, marker="D", s=300)
     ax.scatter(*pos[vrp.depot.id], c="tab:red", **kwargs)
 
+    total_cost = round(total_cost, 2)
     ax.set_title(f"{name}\n Total cost: {total_cost}")
     ax.legend(frameon=False)
     plt.xticks([])  # removes x-axis tick values
@@ -118,7 +119,7 @@ def draw_solution(vrp, routes, total_cost, name="CVRP solution"):
     plt.show()
 
 
-def draw_solution1(vrp, routes) -> None:
+def draw_solution1(vrp, routes, total_cost, name="CVRP solution") -> None:
 
     graph = nx.DiGraph()
     graph.add_nodes_from(vrp.nodes)
@@ -128,13 +129,22 @@ def draw_solution1(vrp, routes) -> None:
     node_colors = ['red' if i == vrp.depot else 'black' for i in vrp.nodes]
 
     fig, ax = plt.subplots()
+    total_cost = round(total_cost, 2)
+    ax.set_title(f"{name}\n Total cost: {total_cost}")
+    # ax.legend(frameon=False)
     nx.draw_networkx_nodes(G=graph, ax=ax, node_color=node_colors, node_size=10, pos=pos)
     for i, route in enumerate(routes):
         route_edges = [(vrp.depot, route[0])] + [(route[i], route[i + 1]) for i in range(len(route) - 1)] + [
             (route[-1], vrp.depot)]
         nx.draw_networkx_edges(G=graph, ax=ax, edgelist=route_edges, edge_color=f'C{i}', width=1, arrowsize=10,
                                arrowstyle='-|>', pos=pos)
+    # save figure
+    plt.savefig(f'./{name}.png', dpi=600)
     plt.show()
+
+
+TEST_SOLVER = GurobiSolver
+TEST_SOLVING_LIMIT = 3
 
 
 def test(model, instances, is_two_stage=True, verbose=False):
@@ -158,8 +168,8 @@ def test(model, instances, is_two_stage=True, verbose=False):
                 predicted_edge_costs = model(torch.tensor([edge.features for edge in inst.edges], dtype=torch.float32))
                 set_predicted_costs(inst.edges, predicted_edge_costs)
 
-            solver = HeuristicSolver(inst, mode=SolverMode.PRED_COST, time_limit=3)
-            # solver = GurobiSolver(inst, mode=SolverMode.PRED_COST, mip_gap=0, time_limit=3)
+            solver = TEST_SOLVER(inst, mode=SolverMode.PRED_COST, time_limit=TEST_SOLVING_LIMIT)
+            # solver = GurobiSolver(inst, mode=SolverMode.PRED_COST, mip_gap=0, time_limit=5)
             solver.solve()
             predicted_edges = solver.get_active_arcs()
             predicted_obj = solver.get_actual_objective()
@@ -188,11 +198,21 @@ def test_single(model, vrp, is_two_stage=False):
         predicted_edge_costs = model(torch.tensor([edge.features for edge in vrp.edges], dtype=torch.float32))
         set_predicted_costs(vrp.edges, predicted_edge_costs)
 
-    solver = HeuristicSolver(vrp, mode=SolverMode.PRED_COST, time_limit=10)
+    solver = HeuristicSolver(vrp, mode=SolverMode.PRED_COST, time_limit=5)
     # solver = GurobiSolver(vrp, mode=SolverMode.PRED_COST, mip_gap=0, time_limit=10)
     solver.solve()
     print(f'Actual objective: {vrp.actual_obj}')
+    draw_solution1(vrp, vrp.actual_routes, vrp.actual_obj, name="Actual solution")
+
+    predicted_edges = solver.get_active_arcs()
+    actual_edges = [vrp.edges[i] for i in range(len(vrp.actual_solution)) if vrp.actual_solution[i] > 0.5]
+    correct_edges = set(actual_edges).intersection(predicted_edges)
+    accuracy = float(len(correct_edges)) / len(predicted_edges)
+    # round to 2 decimal places
+    accuracy = round(accuracy * 100, 2)
+
     print(f'Predicted objective: {solver.get_actual_objective()}')
+    draw_solution1(vrp, solver.get_routes(), solver.get_actual_objective(), name="Predicted solution, accuracy: " + str(accuracy) + "%")
 
 
 def timeit(method):

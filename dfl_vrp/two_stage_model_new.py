@@ -6,7 +6,7 @@ from dfl_vrp.util import get_edge_features, set_predicted_costs
 
 
 class EdgeCostPredictor(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(self, input_size, output_size):
         super().__init__()
         self.linear = nn.Linear(input_size, output_size)
         self.activation = nn.Sigmoid()
@@ -23,7 +23,7 @@ class TwoStageModelNew:
 
         num_edges = len(train_set[0].edges)
         num_features = len(train_set[0].edges[0].features)
-        self.cost_model = EdgeCostPredictor(num_edges * num_features, 256, num_edges)
+        self.cost_model = EdgeCostPredictor(num_edges * num_features, num_edges)
         self.optimizer = torch.optim.Adam(self.cost_model.parameters(), lr=lr, weight_decay=weight_decay)
         self.criterion = nn.MSELoss()
         self.patience = patience
